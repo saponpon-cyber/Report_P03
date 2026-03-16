@@ -497,6 +497,19 @@ const PIN_RECORD = '9999';
 const PIN_DELETE = '3017';
 const STORAGE_KEY = 'railway_p03_records_v2';
 
+let records = [];
+let pendingDeleteId = null;
+let calDate = new Date();
+
+// ===================== STORAGE =====================
+function saveRecords() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+function loadRecords() {
+  try { const d = localStorage.getItem(STORAGE_KEY); if (d) records = JSON.parse(d); }
+  catch(e) { records = []; }
+}
+
 // ===================== HELPERS =====================
 function getCompleted(itemId){return records.filter(r=>r.item_id===itemId).reduce((s,r)=>s+(r.qty||0),0);}
 function getPileDoneSet(){return new Set(records.filter(r=>r.pile_id).map(r=>r.pile_id));}
