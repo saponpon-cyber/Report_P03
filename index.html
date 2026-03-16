@@ -531,15 +531,34 @@ async function gasPull() {
     const res  = await fetch(GAS_URL + '?t=' + Date.now());
     const data = await res.json();
     if (!Array.isArray(data) || data.length === 0) return false;
-    // Parse numeric fields from Sheet strings
+
+    // Normalize a date value from Sheet (could be "Mar 16 2026 ..." or "2026-03-16" or Date string)
+    function normalizeDate(val) {
+      if (!val || val === '') return '';
+      const s = String(val).trim();
+      // Already YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      // Try parsing any Date string
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth()+1).padStart(2,'0');
+        const dd = String(d.getDate()).padStart(2,'0');
+        return `${y}-${m}-${dd}`;
+      }
+      return s;
+    }
+
     const parsed = data.map(r => ({
       ...r,
+      date:            normalizeDate(r.date),
+      created_at:      r.created_at || '',
       qty:             parseFloat(r.qty)            || 0,
       concrete_volume: r.concrete_volume !== '' ? parseFloat(r.concrete_volume) : 0,
       soil_depth:      r.soil_depth      !== '' ? parseFloat(r.soil_depth)      : 0,
       rock_depth:      r.rock_depth      !== '' ? parseFloat(r.rock_depth)      : 0,
-      top_casing:      r.top_casing      !== '' && r.top_casing  != null ? parseFloat(r.top_casing)  : null,
-      pile_cutoff:     r.pile_cutoff     !== '' && r.pile_cutoff != null ? parseFloat(r.pile_cutoff) : null,
+      top_casing:      r.top_casing  !== '' && r.top_casing  != null ? parseFloat(r.top_casing)  : null,
+      pile_cutoff:     r.pile_cutoff !== '' && r.pile_cutoff != null ? parseFloat(r.pile_cutoff) : null,
     }));
     records = parsed;
     saveRecords();
@@ -560,7 +579,20 @@ function getCompleted(itemId){return records.filter(r=>r.item_id===itemId).reduc
 function getPileDoneSet(){return new Set(records.filter(r=>r.pile_id).map(r=>r.pile_id));}
 function today(){return new Date().toISOString().split('T')[0];}
 function fmt(n,d=2){return n!=null&&n!==''?parseFloat(n).toFixed(d):'-';}
-function fmtDate(s){const[y,m,d]=s.split('-');return `${d}/${m}/${y.slice(2)}`;}
+function fmtDate(s){
+  if(!s||s==='undefined/undefined/n'||s.includes('undefined')) return '-';
+  // YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){const[y,m,d]=s.split('-');return `${d}/${m}/${y.slice(2)}`;}
+  // Try parsing other formats
+  const dt=new Date(s);
+  if(!isNaN(dt.getTime())){
+    const d=String(dt.getDate()).padStart(2,'0');
+    const m=String(dt.getMonth()+1).padStart(2,'0');
+    const y=String(dt.getFullYear()).slice(2);
+    return `${d}/${m}/${y}`;
+  }
+  return s;
+}
 
 function showToast(msg,color='green'){
   const t=document.getElementById('toast');
