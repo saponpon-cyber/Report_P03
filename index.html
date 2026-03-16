@@ -499,10 +499,12 @@ const INVENTORY = [
 const PIN_RECORD = '9999';
 const PIN_DELETE = '3017';
 const STORAGE_KEY = 'railway_p03_records_v2';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby-wBnlIX-xOPep0P9r931MX8qfLhvMCeQfpnazDzVtkUengSOL5s0OmAqixBN6Le5l/exec';
 
 let records = [];
 let pendingDeleteId = null;
 let calDate = new Date();
+let _autoSyncTimer = null;
 
 // ===================== STORAGE =====================
 function saveRecords() {
@@ -511,6 +513,46 @@ function saveRecords() {
 function loadRecords() {
   try { const d = localStorage.getItem(STORAGE_KEY); if (d) records = JSON.parse(d); }
   catch(e) { records = []; }
+}
+
+// ===================== SILENT SYNC =====================
+async function gasPush(action, payload) {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, ...payload })
+    });
+    return await res.json();
+  } catch(e) { return null; }
+}
+
+async function gasPull() {
+  try {
+    const res  = await fetch(GAS_URL + '?t=' + Date.now());
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return false;
+    // Parse numeric fields from Sheet strings
+    const parsed = data.map(r => ({
+      ...r,
+      qty:             parseFloat(r.qty)            || 0,
+      concrete_volume: r.concrete_volume !== '' ? parseFloat(r.concrete_volume) : 0,
+      soil_depth:      r.soil_depth      !== '' ? parseFloat(r.soil_depth)      : 0,
+      rock_depth:      r.rock_depth      !== '' ? parseFloat(r.rock_depth)      : 0,
+      top_casing:      r.top_casing      !== '' && r.top_casing  != null ? parseFloat(r.top_casing)  : null,
+      pile_cutoff:     r.pile_cutoff     !== '' && r.pile_cutoff != null ? parseFloat(r.pile_cutoff) : null,
+    }));
+    records = parsed;
+    saveRecords();
+    updateDashboard();
+    renderHistory();
+    renderPileTable();
+    return true;
+  } catch(e) { return false; }
+}
+
+function startAutoSync() {
+  if (_autoSyncTimer) clearInterval(_autoSyncTimer);
+  _autoSyncTimer = setInterval(gasPull, 30000); // pull every 30s
 }
 
 // ===================== HELPERS =====================
@@ -748,6 +790,8 @@ function submitRecord(){
   saveRecords();
   updateDashboard();
   showToast('บันทึกข้อมูลสำเร็จ! ✨', 'green');
+  // Silent push to Sheet
+  gasPush('create', { record: rec });
 
   // Reset form
   document.getElementById('r-cat').value='';
@@ -953,6 +997,8 @@ function confirmDelete(){
   renderPileTable();
   closePinModal();
   showToast('ลบข้อมูลแล้ว','red');
+  // Silent delete from Sheet
+  gasPush('delete', { id: deletedId });
 
 }
 document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmDelete();});
@@ -1524,6 +1570,8 @@ loadRecords();
 document.getElementById('r-date').value = today();
 updateDashboard();
 lucide.createIcons();
+// Pull latest from Sheet silently, then auto-refresh every 30s
+gasPull().then(() => startAutoSync());
 
 </script>
 </body>
