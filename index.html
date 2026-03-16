@@ -53,13 +53,6 @@ th{position:sticky;top:0;z-index:2}
   </div>
 </header>
 
-<!-- SYNC STATUS BAR -->
-<div id="sync-bar" class="hidden bg-yellow-50 border-b border-yellow-200 px-5 py-1.5 flex items-center gap-3 text-xs font-semibold text-yellow-800 flex-none">
-  <span id="sync-icon" class="inline-block w-2 h-2 rounded-full bg-yellow-400"></span>
-  <span id="sync-msg">กำลังเชื่อมต่อ...</span>
-  <button onclick="syncNow()" class="ml-auto px-2.5 py-1 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 rounded-lg transition text-xs">Sync ตอนนี้</button>
-</div>
-
 <!-- MAIN -->
 <main class="flex-1 overflow-auto">
 
@@ -503,111 +496,6 @@ const INVENTORY = [
 const PIN_RECORD = '9999';
 const PIN_DELETE = '3017';
 const STORAGE_KEY = 'railway_p03_records_v2';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby-wBnlIX-xOPep0P9r931MX8qfLhvMCeQfpnazDzVtkUengSOL5s0OmAqixBN6Le5l/exec';
-
-let records = [];
-let pendingDeleteId = null;
-let calDate = new Date();
-let _syncTimer = null;
-let _syncStatus = 'idle'; // idle | syncing | ok | error | offline
-
-// ===================== STORAGE =====================
-function saveRecords() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-}
-function loadRecords() {
-  try { const d = localStorage.getItem(STORAGE_KEY); if (d) records = JSON.parse(d); }
-  catch(e) { records = []; }
-}
-
-// ===================== SYNC ENGINE =====================
-function setSyncStatus(status, msg) {
-  _syncStatus = status;
-  const bar  = document.getElementById('sync-bar');
-  const icon = document.getElementById('sync-icon');
-  const txt  = document.getElementById('sync-msg');
-  const colors = {
-    syncing: ['bg-yellow-400','กำลัง sync...','bg-yellow-50 border-yellow-200 text-yellow-800'],
-    ok:      ['bg-green-500', `Sync ล่าสุด ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`, 'bg-green-50 border-green-200 text-green-800'],
-    error:   ['bg-red-400',  'Sync ล้มเหลว — ข้อมูลเก็บ Local ไว้ก่อน', 'bg-red-50 border-red-200 text-red-800'],
-    offline: ['bg-gray-400', 'Offline — ข้อมูลเก็บ Local ไว้ก่อน', 'bg-gray-100 border-gray-300 text-gray-700'],
-    idle:    ['bg-blue-400', 'พร้อมใช้งาน', 'bg-blue-50 border-blue-200 text-blue-800'],
-  };
-  const [dot, text, barClass] = colors[status] || colors.idle;
-  icon.className = `inline-block w-2 h-2 rounded-full ${dot}`;
-  txt.textContent = msg || text;
-  bar.className = `${barClass} border-b px-5 py-1.5 flex items-center gap-3 text-xs font-semibold flex-none`;
-  bar.classList.remove('hidden');
-  // Auto-hide "ok" after 4s
-  if (status === 'ok') setTimeout(() => { if (_syncStatus === 'ok') bar.classList.add('hidden'); }, 4000);
-}
-
-// Push one new record to Sheet
-async function pushRecord(rec) {
-  try {
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'create', record: rec })
-    });
-    const json = await res.json();
-    return json.ok === true;
-  } catch(e) { return false; }
-}
-
-// Delete one record from Sheet
-async function deleteRecord(id) {
-  try {
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'delete', id })
-    });
-    const json = await res.json();
-    return json.ok === true;
-  } catch(e) { return false; }
-}
-
-// Pull all records FROM Sheet → overwrite local
-async function pullRecords() {
-  try {
-    setSyncStatus('syncing');
-    const res  = await fetch(GAS_URL + '?t=' + Date.now());
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      records = data.map(r => ({
-        ...r,
-        qty:              parseFloat(r.qty) || 0,
-        concrete_volume:  r.concrete_volume !== '' ? parseFloat(r.concrete_volume) : 0,
-        soil_depth:       r.soil_depth !== '' ? parseFloat(r.soil_depth) : 0,
-        rock_depth:       r.rock_depth !== '' ? parseFloat(r.rock_depth) : 0,
-        top_casing:       r.top_casing !== '' ? parseFloat(r.top_casing) : null,
-        pile_cutoff:      r.pile_cutoff !== '' ? parseFloat(r.pile_cutoff) : null,
-      }));
-      saveRecords();
-      updateDashboard();
-      renderHistory();
-      renderPileTable();
-      if (document.getElementById('view-calendar') && !document.getElementById('view-calendar').classList.contains('hidden')) renderCalendar();
-      setSyncStatus('ok');
-      return true;
-    }
-    setSyncStatus('error');
-    return false;
-  } catch(e) {
-    setSyncStatus('offline');
-    return false;
-  }
-}
-
-// Manual sync now button
-async function syncNow() {
-  await pullRecords();
-}
-
-// Auto-refresh every 30 seconds
-function startAutoSync() {
-  if (_syncTimer) clearInterval(_syncTimer);
-  _syncTimer = setInterval(pullRecords, 30000);
-}
 
 // ===================== HELPERS =====================
 function getCompleted(itemId){return records.filter(r=>r.item_id===itemId).reduce((s,r)=>s+(r.qty||0),0);}
@@ -845,13 +733,6 @@ function submitRecord(){
   updateDashboard();
   showToast('บันทึกข้อมูลสำเร็จ! ✨', 'green');
 
-  // Push to Google Sheet (async — ไม่ block UI)
-  setSyncStatus('syncing');
-  pushRecord(rec).then(ok => {
-    if (ok) setSyncStatus('ok');
-    else setSyncStatus('error', 'บันทึก Local แล้ว — Sheet sync ล้มเหลว กด Sync ตอนนี้');
-  });
-
   // Reset form
   document.getElementById('r-cat').value='';
   document.getElementById('r-item').innerHTML='<option value="">-- เลือกหมวดงานก่อน --</option>';
@@ -1057,12 +938,6 @@ function confirmDelete(){
   closePinModal();
   showToast('ลบข้อมูลแล้ว','red');
 
-  // Delete from Sheet (async)
-  setSyncStatus('syncing');
-  deleteRecord(deletedId).then(ok => {
-    if (ok) setSyncStatus('ok');
-    else setSyncStatus('error', 'ลบ Local แล้ว — Sheet sync ล้มเหลว กด Sync ตอนนี้');
-  });
 }
 document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmDelete();});
 
@@ -1633,8 +1508,6 @@ loadRecords();
 document.getElementById('r-date').value = today();
 updateDashboard();
 lucide.createIcons();
-// Pull latest from Sheet on startup, then auto-refresh every 30s
-pullRecords().then(() => startAutoSync());
 
 </script>
 </body>
