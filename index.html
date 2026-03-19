@@ -223,6 +223,31 @@ th{position:sticky;top:0;z-index:2}
         </div>
       </div>
 
+      <!-- Anchor Pile depth fields -->
+      <div id="anc-fields" class="hidden space-y-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <h3 class="text-sm font-bold text-amber-800">&#9875; ข้อมูลการเจาะ (Anchor Pile)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Top Casing (ค่าระดับ)</label>
+            <input type="number" id="anc-top-casing" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" step="0.01" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Pile Cut-off (ค่าระดับ)</label>
+            <input type="number" id="anc-cutoff" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">ความลึกดิน (ม.)</label>
+            <input type="number" id="anc-soil" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">ความลึกหิน (ม.)</label>
+            <input type="number" id="anc-rock" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+      </div>
+
       <!-- Remarks -->
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">หมายเหตุ</label>
         <textarea id="r-remarks" class="w-full px-3 py-3 border border-gray-300 rounded-xl text-sm" rows="2" placeholder="ข้อมูลเพิ่มเติม"></textarea></div>
@@ -726,6 +751,11 @@ function onCatChange(){
   const cat=document.getElementById('r-cat').value;
   const sel=document.getElementById('r-item');
   document.getElementById('bp-fields').classList.add('hidden');
+  document.getElementById('anc-fields').classList.add('hidden');
+  document.getElementById('anc-top-casing').value='';
+  document.getElementById('anc-cutoff').value='';
+  document.getElementById('anc-soil').value='';
+  document.getElementById('anc-rock').value='';
   document.getElementById('pile-selector').classList.add('hidden');
   if(!cat){sel.innerHTML='<option value="">-- เลือกหมวดงานก่อน --</option>';sel.disabled=true;return;}
   const ids=CAT_ITEMS[cat]||[];
@@ -739,7 +769,8 @@ function onCatChange(){
     document.getElementById('pile-selector').classList.remove('hidden');
     populateAxisSelect();
     const isAnchorSel=document.getElementById('r-item').value==='bp-anc';
-    document.getElementById('bp-fields').classList.toggle('hidden',isAnchorSel);
+    document.getElementById('bp-fields').classList.toggle('hidden', isAnchorSel);
+    document.getElementById('anc-fields').classList.toggle('hidden', !isAnchorSel);
   }
 }
 
@@ -749,7 +780,8 @@ function onItemChange(){
   const isAnc=opt?.value==='bp-anc';
   const cat2=document.getElementById('r-cat').value;
   if(['Bored Pile','Static Pile Load Test'].includes(cat2)){
-    document.getElementById('bp-fields').classList.toggle('hidden',isAnc);
+    document.getElementById('bp-fields').classList.toggle('hidden', isAnc);
+    document.getElementById('anc-fields').classList.toggle('hidden', !isAnc);
   }
 }
 
@@ -856,10 +888,18 @@ function submitRecord(){
     pile_id:pileId,
     location:loc||'-',qty,
     concrete_volume:concrete,
-    soil_depth:(['Bored Pile','Static Pile Load Test'].includes(cat)&&itemId!=='bp-anc')?(parseFloat(document.getElementById('r-soil').value)||0):0,
-    rock_depth:(['Bored Pile','Static Pile Load Test'].includes(cat)&&itemId!=='bp-anc')?(parseFloat(document.getElementById('r-rock').value)||0):0,
-    top_casing:(['Bored Pile','Static Pile Load Test'].includes(cat)&&itemId!=='bp-anc')?(parseFloat(document.getElementById('r-top-casing').value)||null):null,
-    pile_cutoff:(['Bored Pile','Static Pile Load Test'].includes(cat)&&itemId!=='bp-anc')?(parseFloat(document.getElementById('r-cutoff').value)||null):null,
+    soil_depth: itemId==='bp-anc'
+      ? (parseFloat(document.getElementById('anc-soil').value)||0)
+      : (['Bored Pile','Static Pile Load Test'].includes(cat)?(parseFloat(document.getElementById('r-soil').value)||0):0),
+    rock_depth: itemId==='bp-anc'
+      ? (parseFloat(document.getElementById('anc-rock').value)||0)
+      : (['Bored Pile','Static Pile Load Test'].includes(cat)?(parseFloat(document.getElementById('r-rock').value)||0):0),
+    top_casing: itemId==='bp-anc'
+      ? (parseFloat(document.getElementById('anc-top-casing').value)||null)
+      : (['Bored Pile','Static Pile Load Test'].includes(cat)?(parseFloat(document.getElementById('r-top-casing').value)||null):null),
+    pile_cutoff: itemId==='bp-anc'
+      ? (parseFloat(document.getElementById('anc-cutoff').value)||null)
+      : (['Bored Pile','Static Pile Load Test'].includes(cat)?(parseFloat(document.getElementById('r-cutoff').value)||null):null),
     remarks:document.getElementById('r-remarks').value.trim(),
     created_at:new Date().toISOString()
   };
@@ -973,11 +1013,11 @@ function renderHistory(){
       <td class="px-4 py-2.5 text-gray-600 text-xs">${r.location||'-'}</td>
       <td class="px-4 py-2.5 text-right font-semibold">${r.qty}</td>
       <td class="px-4 py-2.5 text-right text-orange-600 text-xs">${r.concrete_volume?fmt(r.concrete_volume):'-'}</td>
-      <td class="px-4 py-2.5 text-right text-indigo-600 text-xs">${['Bored Pile','Static Pile Load Test'].includes(r.category)&&r.top_casing!=null?fmt(r.top_casing):'-'}</td>
-      <td class="px-4 py-2.5 text-right text-violet-600 text-xs">${['Bored Pile','Static Pile Load Test'].includes(r.category)&&r.pile_cutoff!=null?fmt(r.pile_cutoff):'-'}</td>
-      <td class="px-4 py-2.5 text-right text-blue-600 text-xs">${['Bored Pile','Static Pile Load Test'].includes(r.category)&&r.soil_depth?fmt(r.soil_depth):'-'}</td>
-      <td class="px-4 py-2.5 text-right text-sky-700 text-xs font-semibold">${(['Bored Pile','Static Pile Load Test'].includes(r.category)&&r.soil_depth&&r.top_casing!=null&&r.pile_cutoff!=null)?fmt(r.soil_depth-(r.top_casing-r.pile_cutoff)):'-'}</td>
-      <td class="px-4 py-2.5 text-right text-cyan-600 text-xs">${['Bored Pile','Static Pile Load Test'].includes(r.category)&&r.rock_depth?fmt(r.rock_depth):'-'}</td>
+      <td class="px-4 py-2.5 text-right text-indigo-600 text-xs">${(['Bored Pile','Static Pile Load Test'].includes(r.category)||r.item_id==='bp-anc')&&r.top_casing!=null?fmt(r.top_casing):'-'}</td>
+      <td class="px-4 py-2.5 text-right text-violet-600 text-xs">${(['Bored Pile','Static Pile Load Test'].includes(r.category)||r.item_id==='bp-anc')&&r.pile_cutoff!=null?fmt(r.pile_cutoff):'-'}</td>
+      <td class="px-4 py-2.5 text-right text-blue-600 text-xs">${(['Bored Pile','Static Pile Load Test'].includes(r.category)||r.item_id==='bp-anc')&&r.soil_depth?fmt(r.soil_depth):'-'}</td>
+      <td class="px-4 py-2.5 text-right text-sky-700 text-xs font-semibold">${(r.item_id!=='bp-anc'&&['Bored Pile','Static Pile Load Test'].includes(r.category)&&r.soil_depth&&r.top_casing!=null&&r.pile_cutoff!=null)?fmt(r.soil_depth-(r.top_casing-r.pile_cutoff)):'-'}</td>
+      <td class="px-4 py-2.5 text-right text-cyan-600 text-xs">${(['Bored Pile','Static Pile Load Test'].includes(r.category)||r.item_id==='bp-anc')&&r.rock_depth?fmt(r.rock_depth):'-'}</td>
       <td class="px-4 py-2.5 text-gray-500 text-xs max-w-32 truncate">${r.remarks||'-'}</td>
       <td class="px-4 py-2.5 text-gray-600 text-xs">${r.user}</td>
       <td class="px-4 py-2.5 text-center"><button onclick="openDeletePin('${r.id}')" class="text-red-400 hover:text-red-600 transition p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
