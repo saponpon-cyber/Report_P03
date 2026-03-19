@@ -411,6 +411,7 @@ th{position:sticky;top:0;z-index:2}
     <div class="flex items-center gap-2 ml-auto text-xs flex-wrap">
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>แล้วเสร็จ</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full inline-block" style="background:#e2e8f0;border:1px solid #94a3b8"></span>ยังไม่ดำเนินการ</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full inline-block" style="background:#fde047;border:2px solid #ca8a04"></span>กำลังดำเนินการ</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full inline-block" style="background:#ede9fe;border:2px solid #7c3aed"></span>Static Test</span>
       <span class="flex items-center gap-1 relative"><span class="w-3 h-3 rounded-full inline-block" style="background:#e2e8f0;border:2px solid #ef4444"></span>Dynamic Test</span>
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full inline-block" style="background:#e2e8f0;outline:2px dashed #f97316;outline-offset:1px"></span>Sonic Test</span>
@@ -513,6 +514,29 @@ let calDate = new Date();
 let _autoSyncTimer = null;
 // Plan View state — ค้างค่าเมื่อเปลี่ยนแถบ
 const pvState = { from: 0, to: 19, scale: 3, ready: false };
+// กำลังดำเนินการ — เก็บ pile_id ที่มีสถานะ WIP
+const WIP_KEY = 'railway_p03_wip_v1';
+let wipPiles = new Set(JSON.parse(localStorage.getItem(WIP_KEY)||'[]'));
+function saveWip(){ localStorage.setItem(WIP_KEY, JSON.stringify([...wipPiles])); }
+function toggleWip(pileId){
+  if(wipPiles.has(pileId)) wipPiles.delete(pileId);
+  else wipPiles.add(pileId);
+  saveWip();
+  renderPlanView();
+  // อัปเดต popup ใหม่ (ถ้ายังเปิดอยู่)
+  const pop = document.getElementById('pv-tooltip');
+  if(!pop.classList.contains('hidden')){
+    const btn = document.getElementById('wip-btn');
+    if(btn) updateWipBtn(pileId);
+  }
+}
+function updateWipBtn(pileId){
+  const btn = document.getElementById('wip-btn');
+  if(!btn) return;
+  const isWip = wipPiles.has(pileId);
+  btn.textContent = isWip ? '🟡 กำลังดำเนินการ (คลิกเพื่อยกเลิก)' : '🟡 ตั้งเป็น กำลังดำเนินการ';
+  btn.style.background = isWip ? '#ca8a04' : '#eab308';
+}
 
 // ===================== STORAGE =====================
 function saveRecords() {
@@ -1375,18 +1399,19 @@ function renderPlanView() {
           py = centerY + rowOff + (Math.floor(pi/2) - Math.floor((nPiles/2-1)/2)) * sp;
         }
 
-        // ── Fill colour: done=green, pending=grey ──────────────────────────
-        let fill   = isDone ? '#22c55e' : '#e2e8f0';
-        let stroke = isDone ? '#15803d' : '#94a3b8';
-        let strokeW = isDone ? 1.5 : 0.8;
+        // ── Fill colour: done=green, wip=yellow, pending=grey ────────────
+        const isWip = !isDone && wipPiles.has(pid);
+        let fill   = isDone ? '#22c55e' : isWip ? '#fde047' : '#e2e8f0';
+        let stroke = isDone ? '#15803d' : isWip ? '#ca8a04' : '#94a3b8';
+        let strokeW = (isDone || isWip) ? 1.5 : 0.8;
 
         // ── Test ring: outer stroke colour changes ─────────────────────────
         // sonic=orange ring, dynamic=red ring, static test axis=purple fill
         let ringStroke = null;
         let ringW = 2.5;
         if (isStaticTest) {
-          fill   = isDone ? '#22c55e' : '#ede9fe';
-          stroke = isDone ? '#15803d' : '#7c3aed';
+          fill   = isDone ? '#22c55e' : isWip ? '#fde047' : '#ede9fe';
+          stroke = isDone ? '#15803d' : isWip ? '#ca8a04' : '#7c3aed';
           strokeW = 1.5;
         } else if (testType==='dynamic') {
           ringStroke = '#ef4444';
@@ -1405,7 +1430,7 @@ function renderPlanView() {
 
         // Pile label (B number)
         const bNum = pid.split('-').pop();
-        const txtFill = (isDone||isStaticTest) ? '#fff' : (testType ? '#1e293b' : '#64748b');
+        const txtFill = isDone ? '#fff' : isWip ? '#92400e' : isStaticTest ? '#fff' : (testType ? '#1e293b' : '#64748b');
         svg += `<text x="${px.toFixed(1)}" y="${(py+3.5).toFixed(1)}" text-anchor="middle" font-size="7" font-weight="600" fill="${txtFill}" pointer-events="none">${bNum}</text>`;
 
         // Date label if done
@@ -1475,7 +1500,15 @@ function showPvPopup(e, pileId, axis, testType) {
 
   const safeAxis = axis.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   const safePid  = pileId.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  body += `<button onclick="pvGoRecord('${safePid}','${safeAxis}')" style="margin-top:8px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">&#9998; บันทึกข้อมูล Pile นี้</button>`;
+
+  // ปุ่ม กำลังดำเนินการ — ซ่อนถ้า done แล้ว
+  if (!recList.length) {
+    const isWip = wipPiles.has(pileId);
+    const wipBg = isWip ? '#ca8a04' : '#eab308';
+    const wipTxt = isWip ? '🟡 กำลังดำเนินการ (คลิกเพื่อยกเลิก)' : '🟡 ตั้งเป็น กำลังดำเนินการ';
+    body += `<button id="wip-btn" onclick="toggleWip('${safePid}')" style="margin-top:6px;width:100%;background:${wipBg};color:#fff;border:none;border-radius:8px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">${wipTxt}</button>`;
+  }
+  body += `<button onclick="pvGoRecord('${safePid}','${safeAxis}')" style="margin-top:6px;width:100%;background:#2563eb;color:#fff;border:none;border-radius:8px;padding:7px;font-size:12px;font-weight:600;cursor:pointer">&#9998; บันทึกข้อมูล Pile นี้</button>`;
 
   pop.innerHTML = `<button onclick="hidePvPopup()" style="position:absolute;top:6px;right:8px;background:none;border:none;cursor:pointer;font-size:18px;color:#9ca3af;line-height:1">&times;</button>${body}`;
   const pw=240, ph=300, vw=window.innerWidth, vh=window.innerHeight;
