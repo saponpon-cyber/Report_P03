@@ -55,6 +55,7 @@ th{position:sticky;top:0;z-index:2}
       <button id="tab-piles" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('piles')"><i data-lucide="layers" class="w-4 h-4"></i>Master Pile</button>
       <button id="tab-history" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('history')"><i data-lucide="history" class="w-4 h-4"></i>ประวัติ</button>
       <button id="tab-calendar" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('calendar')"><i data-lucide="calendar" class="w-4 h-4"></i>ปฏิทิน</button>
+      <button id="tab-scurve" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('scurve')"><i data-lucide="trending-up" class="w-4 h-4"></i>S-Curve</button>
       <button id="tab-plan" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('plan')"><i data-lucide="map" class="w-4 h-4"></i>Plan View</button>
     </div>
   </div>
@@ -412,8 +413,126 @@ th{position:sticky;top:0;z-index:2}
 </div>
 
 <!-- ===================== PLAN VIEW ===================== -->
+<div id="view-scurve" class="hidden p-3 sm:p-5 space-y-5">
+  <!-- Contract Info Bar -->
+  <div class="bg-gradient-to-r from-indigo-700 to-indigo-900 rounded-2xl p-4 text-white">
+    <div class="flex flex-wrap gap-4 justify-between text-sm">
+      <div><span class="text-indigo-300 text-xs">สัญญา</span><div class="font-bold">ASNK/A/001 | 720 วัน</div></div>
+      <div><span class="text-indigo-300 text-xs">เริ่มงาน</span><div class="font-bold">10 ต.ค. 2568</div></div>
+      <div><span class="text-indigo-300 text-xs">สิ้นสุด</span><div class="font-bold">30 ก.ย. 2570</div></div>
+      <div><span class="text-indigo-300 text-xs">วันที่ผ่านไป</span><div class="font-bold text-yellow-300" id="sc-days-elapsed">—</div></div>
+      <div><span class="text-indigo-300 text-xs">วันที่เหลือ</span><div class="font-bold text-green-300" id="sc-days-remain">—</div></div>
+      <div><span class="text-indigo-300 text-xs">มูลค่าโครงการ</span><div class="font-bold">2,094,500,000 บาท</div></div>
+    </div>
+  </div>
+
+  <!-- Overall Progress -->
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
+      <p class="text-xs text-gray-500">% แผนสะสม (ณ ปัจจุบัน)</p>
+      <p class="text-2xl font-black text-blue-600" id="sc-plan-now">—</p>
+    </div>
+    <div class="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
+      <p class="text-xs text-gray-500">% จริงสะสม</p>
+      <p class="text-2xl font-black text-green-600" id="sc-actual-now">—</p>
+    </div>
+    <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+      <p class="text-xs text-gray-500">ผลต่าง (ช้า/เร็ว)</p>
+      <p class="text-2xl font-black text-red-600" id="sc-diff-now">—</p>
+    </div>
+  </div>
+
+  <!-- มูลค่างานรายหมวด -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 cursor-pointer hover:shadow-md transition" onclick="toggleValueDetail('piling')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-bold text-indigo-700">🔩 Piling</span>
+        <span class="text-xs text-indigo-400">▼</span>
+      </div>
+      <p class="text-lg font-black text-indigo-800">640.96 ล้าน</p>
+      <p class="text-xs text-indigo-500">30.59% ของโครงการ</p>
+      <div class="mt-2 h-1.5 bg-indigo-100 rounded-full"><div class="h-1.5 bg-indigo-500 rounded-full" style="width:30.59%"></div></div>
+    </div>
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 cursor-pointer hover:shadow-md transition" onclick="toggleValueDetail('sub')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-bold text-emerald-700">🏗️ Sub Structure</span>
+        <span class="text-xs text-emerald-400">▼</span>
+      </div>
+      <p class="text-lg font-black text-emerald-800">726.77 ล้าน</p>
+      <p class="text-xs text-emerald-500">34.70% ของโครงการ</p>
+      <div class="mt-2 h-1.5 bg-emerald-100 rounded-full"><div class="h-1.5 bg-emerald-500 rounded-full" style="width:34.70%"></div></div>
+    </div>
+    <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 cursor-pointer hover:shadow-md transition" onclick="toggleValueDetail('super')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs font-bold text-purple-700">🏛️ Super Structure</span>
+        <span class="text-xs text-purple-400">▼</span>
+      </div>
+      <p class="text-lg font-black text-purple-800">796.12 ล้าน</p>
+      <p class="text-xs text-purple-500">38.01% ของโครงการ</p>
+      <div class="mt-2 h-1.5 bg-purple-100 rounded-full"><div class="h-1.5 bg-purple-500 rounded-full" style="width:38.01%"></div></div>
+    </div>
+  </div>
+
+  <!-- Detail Tables (collapsible) -->
+  <div id="val-piling" class="hidden bg-white rounded-2xl border border-indigo-200 overflow-hidden">
+    <div class="px-4 py-2 bg-indigo-50 border-b border-indigo-100 font-bold text-sm text-indigo-800 flex justify-between">
+      <span>🔩 Piling — รายละเอียดมูลค่า</span>
+      <button onclick="toggleValueDetail('piling')" class="text-indigo-400 text-xs">ปิด ✕</button>
+    </div>
+    <div id="val-piling-body" class="overflow-x-auto"></div>
+  </div>
+  <div id="val-sub" class="hidden bg-white rounded-2xl border border-emerald-200 overflow-hidden">
+    <div class="px-4 py-2 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-800 flex justify-between">
+      <span>🏗️ Sub Structure — รายละเอียดมูลค่า</span>
+      <button onclick="toggleValueDetail('sub')" class="text-emerald-400 text-xs">ปิด ✕</button>
+    </div>
+    <div id="val-sub-body" class="overflow-x-auto"></div>
+  </div>
+  <div id="val-super" class="hidden bg-white rounded-2xl border border-purple-200 overflow-hidden">
+    <div class="px-4 py-2 bg-purple-50 border-b border-purple-100 font-bold text-sm text-purple-800 flex justify-between">
+      <span>🏛️ Super Structure — รายละเอียดมูลค่า</span>
+      <button onclick="toggleValueDetail('super')" class="text-purple-400 text-xs">ปิด ✕</button>
+    </div>
+    <div id="val-super-body" class="overflow-x-auto"></div>
+  </div>
+
+  <!-- S-Curve Chart -->
+  <div class="bg-white rounded-2xl border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold text-gray-700">📈 S-Curve — แผน vs จริง (สะสม)</h3>
+      <div class="flex gap-4 text-xs">
+        <span class="flex items-center gap-1"><span class="w-4 h-0.5 bg-blue-500 inline-block"></span>แผน</span>
+        <span class="flex items-center gap-1"><span class="w-4 h-0.5 bg-green-500 inline-block"></span>จริง</span>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <canvas id="scurve-canvas" height="260" style="min-width:600px;width:100%"></canvas>
+    </div>
+  </div>
+
+  <!-- Monthly Table -->
+  <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-100 font-bold text-sm text-gray-700">ตารางความก้าวหน้ารายเดือน</div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead class="bg-gray-50 text-gray-500 uppercase">
+          <tr>
+            <th class="px-3 py-2 text-left">เดือน</th>
+            <th class="px-3 py-2 text-right">% แผน (รายเดือน)</th>
+            <th class="px-3 py-2 text-right">% แผนสะสม</th>
+            <th class="px-3 py-2 text-right">% จริงสะสม</th>
+            <th class="px-3 py-2 text-center">ผลต่าง</th>
+            <th class="px-3 py-2 text-center">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="scurve-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div id="view-plan" class="hidden flex flex-col" style="height:calc(100vh - 140px)">
-  <!-- Controls bar -->
+  <!-- Controls bar row 1: Plan View label + STA selects + Legend -->
   <div class="bg-white border-b border-gray-200 px-3 py-2 flex items-center gap-2 flex-wrap flex-none">
     <div class="flex items-center gap-1.5">
       <i data-lucide="map" class="w-4 h-4 text-blue-600"></i>
@@ -427,10 +546,10 @@ th{position:sticky;top:0;z-index:2}
       <select id="pv-to" onchange="renderPlanView()" class="text-xs px-2 py-1 border border-gray-300 rounded-lg">
       </select>
     </div>
-    <div class="flex items-center gap-1.5">
-      <label class="text-xs font-semibold text-gray-500 hidden sm:inline">Scale</label>
-      <input type="range" id="pv-scale" min="1" max="8" step="0.5" value="3" oninput="onPvScaleChange()" class="w-24">
-      <span id="pv-scale-label" class="text-xs text-gray-500 w-8">3×</span>
+    <!-- Scale fixed label (hidden slider) -->
+    <div class="flex items-center gap-1 ml-1">
+      <input type="range" id="pv-scale" min="1" max="8" step="0.5" value="5.5" class="hidden">
+      <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Scale 5.5×</span>
     </div>
     <!-- Legend -->
     <div class="flex items-center gap-2 ml-auto text-xs flex-wrap">
@@ -442,10 +561,21 @@ th{position:sticky;top:0;z-index:2}
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full inline-block" style="background:#e2e8f0;outline:2px dashed #f97316;outline-offset:1px"></span>Sonic Test</span>
     </div>
   </div>
-  <!-- Canvas wrapper -->
-  <div id="pv-outer" class="flex-1 overflow-auto bg-slate-100 relative" style="-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
+  <!-- Controls bar row 2: Scrollbar ซ้าย-ขวา -->
+  <div class="bg-gray-50 border-b border-gray-200 px-3 py-1.5 flex items-center gap-2 flex-none">
+    <span class="text-xs text-gray-400 whitespace-nowrap">◀</span>
+    <input type="range" id="pv-hscroll" min="0" max="100" value="0" step="1"
+      oninput="onPvHScroll(this.value)"
+      class="flex-1 h-2 accent-blue-500" style="cursor:pointer">
+    <span class="text-xs text-gray-400 whitespace-nowrap">▶</span>
+  </div>
+  <!-- Canvas wrapper (overflow hidden — scroll controlled by slider above) -->
+  <div id="pv-outer" class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 relative" style="-webkit-overflow-scrolling:touch">
     <div id="pv-canvas" class="relative select-none" style="min-width:800px">
       <!-- SVG rendered here by JS -->
+    </div>
+    <!-- Detail table strip -->
+    <div id="pv-detail-strip" class="bg-white border-t-2 border-slate-300" style="min-width:800px">
     </div>
   </div>
   <!-- Tooltip -->
@@ -531,6 +661,59 @@ const INVENTORY = [
 const PIN_RECORD = '9999';
 const PIN_DELETE = '3017';
 const STORAGE_KEY = 'railway_p03_records_v2';
+
+// ─── Master Plan Data (from Master_Plan_rev_0, 22-03-69) ──────────────────────
+// มูลค่างานรายหมวด (บาท) และ % แผน ณ เดือนปัจจุบัน (M6 มี.ค.69)
+const PLAN_VALUE = {
+  piling: {
+    total: 640962676,
+    items: [
+      { name:'Bored Pile Ø1.20m (In Soil)',  qty:2560,   unit:'LM',  rate:10842.3,  value:27756288 },
+      { name:'Bored Pile Ø1.20m (In Rock)',   qty:110.59, unit:'LM',  rate:61307.13, value:6779956 },
+      { name:'Bored Pile Ø1.50m (In Soil)',   qty:26080,  unit:'LM',  rate:16210.45, value:422768536 },
+      { name:'Bored Pile Ø1.50m (In Rock)',   qty:2361.6, unit:'LM',  rate:72132.9,  value:170349057 },
+      { name:'Static Pile Test Ø1.20m',       qty:1,      unit:'ea.', rate:739842,   value:739842 },
+      { name:'Static Pile Test Ø1.50m',       qty:5,      unit:'ea.', rate:1016242,  value:5081212 },
+      { name:'Dynamic Pile Test Ø1.20m',      qty:2,      unit:'ea.', rate:60668,    value:121335 },
+      { name:'Dynamic Pile Test Ø1.50m',      qty:26,     unit:'ea.', rate:68558,    value:1782510 },
+      { name:'Sonic Logging Ø1.20m',          qty:276,    unit:'m.',  rate:902.82,   value:249178 },
+      { name:'Sonic Logging Ø1.50m',          qty:5909,   unit:'m.',  rate:902.82,   value:5334763 },
+    ]
+  },
+  subStructure: {
+    total: 726768662,
+    items: [
+      { name:'ฐานราก VP1',         qty:136, unit:'ea.', value:254743655, planPct:12.16 },
+      { name:'ฐานราก VP1S',        qty:16,  unit:'ea.', value:29969842,  planPct:1.43  },
+      { name:'ฐานราก VP2A',        qty:4,   unit:'ea.', value:7492460,   planPct:0.36  },
+      { name:'ฐานราก VP2B',        qty:2,   unit:'ea.', value:3746230,   planPct:0.18  },
+      { name:'ฐานราก F1 (สถานี)', qty:36,  unit:'ea.', value:67432144,  planPct:3.22  },
+      { name:'เสา Column',         qty:194, unit:'ea.', value:278788459, planPct:13.31 },
+      { name:'Crossbeam VP2A',     qty:4,   unit:'ea.', value:19622754,  planPct:0.94  },
+      { name:'Crossbeam VP2B',     qty:2,   unit:'ea.', value:9738700,   planPct:0.46  },
+      { name:'Portal Frame 18.30m',qty:16,  unit:'ea.', value:48402793,  planPct:2.31  },
+      { name:'Portal Frame 20.50m',qty:2,   unit:'ea.', value:6831625,   planPct:0.33  },
+    ]
+  },
+  superStructure: {
+    total: 796118153,
+    items: [
+      { name:'Segment BG30 (138 Spans)',       qty:138, unit:'Span', value:277310807, planPct:13.24 },
+      { name:'Segment BG30S (62 Spans)',       qty:62,  unit:'Span', value:124588913, planPct:5.95  },
+      { name:'Segment I-Girder (17 Spans)',    qty:17,  unit:'Span', value:34161476,  planPct:0     },
+      { name:'Install BG30',                   qty:138, unit:'Span', value:48334494,  planPct:2.31  },
+      { name:'Install BG30S',                  qty:62,  unit:'Span', value:21715497,  planPct:1.04  },
+      { name:'Cable Trough',                   qty:198, unit:'Span', value:69349492,  planPct:0     },
+      { name:'Concrete Barrier + Handrail',   qty:199, unit:'Span', value:145353732, planPct:6.94  },
+    ]
+  }
+};
+const CONTRACT = {
+  start: '2025-10-10', end: '2027-09-30',
+  totalDays: 720, valueBaht: 2094500000,
+  contractor: 'บริษัท ประยูรวิศว์ จำกัด'
+};
+const SCURVE_DATA = [{"month": "ต.ค. 68", "no": 1, "plan_m": 0.0, "plan_acc": 0.0, "actual_acc": 0.0}, {"month": "พ.ย. 68", "no": 2, "plan_m": 0.0, "plan_acc": 0.0, "actual_acc": null}, {"month": "ธ.ค. 68", "no": 3, "plan_m": 0.0, "plan_acc": 0.0, "actual_acc": null}, {"month": "ม.ค. 69", "no": 4, "plan_m": 0.0, "plan_acc": 0.0, "actual_acc": null}, {"month": "ก.พ. 69", "no": 5, "plan_m": 0.0, "plan_acc": 0.0, "actual_acc": null}, {"month": "มี.ค. 69", "no": 6, "plan_m": 4.4454, "plan_acc": 4.4454, "actual_acc": 0.1021}, {"month": "เม.ย. 69", "no": 7, "plan_m": 4.3071, "plan_acc": 8.7526, "actual_acc": null}, {"month": "พ.ค. 69", "no": 8, "plan_m": 6.1875, "plan_acc": 14.94, "actual_acc": null}, {"month": "มิ.ย. 69", "no": 9, "plan_m": 7.2796, "plan_acc": 22.2197, "actual_acc": null}, {"month": "ก.ค. 69", "no": 10, "plan_m": 7.418, "plan_acc": 29.6376, "actual_acc": null}, {"month": "ส.ค. 69", "no": 11, "plan_m": 7.2796, "plan_acc": 36.9173, "actual_acc": null}, {"month": "ก.ย. 69", "no": 12, "plan_m": 7.2967, "plan_acc": 44.2139, "actual_acc": null}, {"month": "ต.ค. 69", "no": 13, "plan_m": 8.0598, "plan_acc": 52.2737, "actual_acc": null}, {"month": "พ.ย. 69", "no": 14, "plan_m": 4.4522, "plan_acc": 56.726, "actual_acc": null}, {"month": "ธ.ค. 69", "no": 15, "plan_m": 4.8779, "plan_acc": 61.6039, "actual_acc": null}, {"month": "ม.ค. 70", "no": 16, "plan_m": 4.7967, "plan_acc": 66.4006, "actual_acc": null}, {"month": "ก.พ. 70", "no": 17, "plan_m": 4.8039, "plan_acc": 71.2045, "actual_acc": null}, {"month": "มี.ค. 70", "no": 18, "plan_m": 3.5448, "plan_acc": 74.7493, "actual_acc": null}, {"month": "เม.ย. 70", "no": 19, "plan_m": 4.9757, "plan_acc": 79.725, "actual_acc": null}, {"month": "พ.ค. 70", "no": 20, "plan_m": 3.9622, "plan_acc": 83.6872, "actual_acc": null}, {"month": "มิ.ย. 70", "no": 21, "plan_m": 2.7319, "plan_acc": 86.4191, "actual_acc": null}, {"month": "ก.ค. 70", "no": 22, "plan_m": 2.7319, "plan_acc": 89.151, "actual_acc": null}, {"month": "ส.ค. 70", "no": 23, "plan_m": 2.7319, "plan_acc": 91.8829, "actual_acc": null}, {"month": "ก.ย. 70", "no": 24, "plan_m": 1.9964, "plan_acc": 93.8793, "actual_acc": null}];
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMy_1BPF5Jx4lVDiExROOdtV-j5QU0As994shWXgMnOzIA3CiImOmT-beNWskpVC5T/exec';
 
 let records = [];
@@ -663,17 +846,239 @@ function showToast(msg,color='green'){
 
 // ===================== TABS =====================
 function switchTab(tab){
-  ['dashboard','record','piles','history','calendar','plan'].forEach(t=>{
+  ['dashboard','record','piles','history','calendar','scurve','plan'].forEach(t=>{
     document.getElementById('view-'+t).classList.toggle('hidden',t!==tab);
     const btn=document.getElementById('tab-'+t);
     btn.classList.toggle('tab-active',t===tab);
     btn.classList.toggle('text-blue-200',t!==tab);
   });
   if(tab==='calendar')renderCalendar();
+  if(tab==='scurve')renderSCurve();
   if(tab==='plan'){initPvSelects();renderPlanView();}
   if(tab==='piles')renderPileTable();
   if(tab==='history')renderHistory();
   if(tab==='dashboard')updateDashboard();
+}
+
+
+// ===================== PLAN VALUE =====================
+function toggleValueDetail(key){
+  const map = { piling:'val-piling', sub:'val-sub', super:'val-super' };
+  const id = map[key];
+  const el = document.getElementById(id);
+  if(el.classList.contains('hidden')){
+    el.classList.remove('hidden');
+    renderValueTable(key);
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+function renderValueTable(key){
+  const fmt2 = v => Number(v).toLocaleString('th-TH');
+  const fmtM = v => (v/1e6).toFixed(2)+' ล้าน';
+  let data, bodyId, color;
+  if(key==='piling'){
+    data = PLAN_VALUE.piling.items; bodyId='val-piling-body'; color='indigo';
+  } else if(key==='sub'){
+    data = PLAN_VALUE.subStructure.items; bodyId='val-sub-body'; color='emerald';
+  } else {
+    data = PLAN_VALUE.superStructure.items; bodyId='val-super-body'; color='purple';
+  }
+  let rows = data.map(d=>{
+    const planBadge = d.planPct!=null && d.planPct>0
+      ? `<span class="text-blue-600">${d.planPct.toFixed(2)}%</span>` : '<span class="text-gray-300">—</span>';
+    return `<tr class="border-b border-gray-50 hover:bg-gray-50 text-xs">
+      <td class="px-3 py-2 text-gray-700">${d.name}</td>
+      <td class="px-3 py-2 text-right text-gray-500">${d.qty} ${d.unit}</td>
+      <td class="px-3 py-2 text-right font-semibold text-gray-800">${fmtM(d.value)}</td>
+      <td class="px-3 py-2 text-right">${planBadge}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById(bodyId).innerHTML = `<table class="w-full text-xs">
+    <thead class="bg-gray-50 text-gray-500">
+      <tr>
+        <th class="px-3 py-2 text-left">รายการ</th>
+        <th class="px-3 py-2 text-right">จำนวน</th>
+        <th class="px-3 py-2 text-right">มูลค่า</th>
+        <th class="px-3 py-2 text-right">% แผน (M6)</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ===================== S-CURVE =====================
+function renderSCurve(){
+  // ── Contract days ─────────────────────────────────────────────────────────
+  const CONTRACT_START = new Date(CONTRACT.start);
+  const CONTRACT_END   = new Date(CONTRACT.end);
+  const today = new Date();
+  const elapsed   = Math.max(0, Math.floor((today - CONTRACT_START)/(1000*86400)));
+  const remaining = Math.max(0, Math.floor((CONTRACT_END - today)/(1000*86400)));
+  document.getElementById('sc-days-elapsed').textContent = elapsed.toLocaleString('th-TH') + ' วัน';
+  document.getElementById('sc-days-remain').textContent  = remaining.toLocaleString('th-TH') + ' วัน';
+
+  // ── คำนวณ % จริงสะสมรายเดือน จาก records (ใช้วันที่บันทึก) ─────────────
+  const BP_TOTAL=731, FT_TOTAL=194, COL_TOTAL=218;
+  const W_BP=30.61, W_FT=17.35, W_COL=17.35; // weight % จาก Master Plan
+
+  // BP/FT/COL categories
+  const BP_CATS  = ['Bored Pile','Static Pile Load Test'];
+  const FT_CAT   = 'Footing';
+  const COL_CAT  = 'Column / Crossbeam';
+
+  // หาเดือนปัจจุบัน (M1 = ต.ค. 68)
+  const curMonthNo = (today.getFullYear() - CONTRACT_START.getFullYear())*12
+                   + (today.getMonth() - CONTRACT_START.getMonth()) + 1;
+
+  // สำหรับแต่ละเดือนใน SCURVE_DATA คำนวณ actual สะสม ณ สิ้นเดือนนั้น
+  const actualByMonth = {}; // monthNo → actualPct
+
+  SCURVE_DATA.forEach(d => {
+    if (d.no > curMonthNo) return; // ยังไม่ถึงเดือนนั้น
+    // หาวันสุดท้ายของเดือน d.no
+    const mIdx  = CONTRACT_START.getMonth() + d.no - 1;
+    const endOfMonth = new Date(CONTRACT_START.getFullYear() + Math.floor(mIdx/12),
+                                mIdx%12 + 1, 0); // วันสุดท้ายของเดือน
+    const endStr = endOfMonth.toISOString().slice(0,10); // YYYY-MM-DD
+
+    // นับ records ที่ date <= endStr
+    const recs = records.filter(r => r.date && r.date <= endStr);
+    const bpDone  = recs.filter(r=>BP_CATS.includes(r.category))
+                        .reduce((s,r)=>s+(r.qty||0),0);
+    const ftDone  = recs.filter(r=>r.category===FT_CAT)
+                        .reduce((s,r)=>s+(r.qty||0),0);
+    const colDone = recs.filter(r=>r.category===COL_CAT)
+                        .reduce((s,r)=>s+(r.qty||0),0);
+
+    actualByMonth[d.no] = ((bpDone/BP_TOTAL)*W_BP
+                          +(ftDone/FT_TOTAL)*W_FT
+                          +(colDone/COL_TOTAL)*W_COL) / 100;
+  });
+
+  // % จริงสะสม ณ ปัจจุบัน
+  const actualNow = actualByMonth[curMonthNo] ?? 0;
+  const curEntry  = SCURVE_DATA.find(d=>d.no===curMonthNo);
+  const planNow   = curEntry ? curEntry.plan_acc : 0;
+  const diff      = actualNow - planNow;
+
+  document.getElementById('sc-plan-now').textContent   = planNow.toFixed(2)+'%';
+  document.getElementById('sc-actual-now').textContent = actualNow.toFixed(2)+'%';
+  const diffEl = document.getElementById('sc-diff-now');
+  diffEl.textContent = (diff>=0?'+':'')+diff.toFixed(2)+'%';
+  diffEl.className = 'text-2xl font-black '+(diff>=-0.5?'text-green-600':'text-red-600');
+
+  // ── ตารางรายเดือน ─────────────────────────────────────────────────────────
+  let rows = '';
+  SCURVE_DATA.forEach(d => {
+    const isCurrent = d.no === curMonthNo;
+    const isPast    = d.no < curMonthNo;
+    const hasActual = d.no <= curMonthNo;
+    const act       = hasActual ? actualByMonth[d.no] : null;
+    const actTxt    = act != null ? act.toFixed(2)+'%' : '—';
+    const dif       = act != null ? act - d.plan_acc : null;
+    const difTxt    = dif != null ? ((dif>=0?'+':'')+dif.toFixed(2)+'%') : '—';
+    const status    = dif == null ? '' : dif >= -0.5 ? '✅ ตามแผน' : '⚠️ ช้ากว่าแผน';
+    const difColor  = dif==null?'text-gray-300': dif>=-0.5?'text-green-600':'text-red-500';
+    const bg        = isCurrent ? 'bg-yellow-50' : isPast ? 'bg-gray-50/50' : '';
+    rows += `<tr class="border-b border-gray-100 hover:bg-gray-50 ${bg}">
+      <td class="px-3 py-2 font-medium ${isCurrent?'text-indigo-700 font-bold':'text-gray-700'}">${d.month}${isCurrent?' ◀':''}</td>
+      <td class="px-3 py-2 text-right text-blue-500 text-xs">${d.plan_m.toFixed(2)}%</td>
+      <td class="px-3 py-2 text-right text-blue-700 font-semibold">${d.plan_acc.toFixed(2)}%</td>
+      <td class="px-3 py-2 text-right text-green-600 font-semibold">${actTxt}</td>
+      <td class="px-3 py-2 text-center ${difColor} text-xs font-semibold">${difTxt}</td>
+      <td class="px-3 py-2 text-center text-xs">${status}</td>
+    </tr>`;
+  });
+  document.getElementById('scurve-tbody').innerHTML = rows;
+
+  // ── กราฟ ──────────────────────────────────────────────────────────────────
+  drawSCurveChart(curMonthNo, actualByMonth);
+}
+
+function drawSCurveChart(curMonthNo, actualByMonth){
+  const canvas = document.getElementById('scurve-canvas');
+  if(!canvas) return;
+  const W = canvas.offsetWidth||700, H = 280;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const PAD = {l:44, r:16, t:24, b:60};
+  const cW = W-PAD.l-PAD.r, cH = H-PAD.t-PAD.b;
+  const N = SCURVE_DATA.length;
+  const xStep = cW/N;
+
+  // ── Grid ──────────────────────────────────────────────────────────────────
+  ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=0.8;
+  [0,25,50,75,100].forEach(y=>{
+    const py = PAD.t + cH - (y/100)*cH;
+    ctx.beginPath(); ctx.moveTo(PAD.l,py); ctx.lineTo(PAD.l+cW,py); ctx.stroke();
+    ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='right';
+    ctx.fillText(y+'%', PAD.l-5, py+3.5);
+  });
+
+  // ── X Labels (ทุก 3 เดือน) ────────────────────────────────────────────────
+  ctx.fillStyle='#64748b'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  SCURVE_DATA.forEach((d,i)=>{
+    if(i%3===0 || i===N-1){
+      const px = PAD.l + i*xStep + xStep/2;
+      ctx.fillText(d.month, px, H-PAD.b+14);
+    }
+  });
+
+  // ── Plan line (น้ำเงิน) ───────────────────────────────────────────────────
+  ctx.beginPath(); ctx.strokeStyle='#3b82f6'; ctx.lineWidth=2.5;
+  SCURVE_DATA.forEach((d,i)=>{
+    const px = PAD.l + i*xStep + xStep/2;
+    const py = PAD.t + cH*(1 - d.plan_acc/100);
+    i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+
+  // ── Actual line (เขียว) — เฉพาะเดือนที่มีข้อมูล ────────────────────────
+  const actualMonths = SCURVE_DATA.filter(d=>d.no<=curMonthNo && actualByMonth[d.no]!=null);
+  if(actualMonths.length){
+    ctx.beginPath(); ctx.strokeStyle='#22c55e'; ctx.lineWidth=2.5;
+    actualMonths.forEach((d,i)=>{
+      const idx = SCURVE_DATA.indexOf(d);
+      const px  = PAD.l + idx*xStep + xStep/2;
+      const py  = PAD.t + cH*(1 - actualByMonth[d.no]/100);
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+    // จุดล่าสุด
+    const lastD = actualMonths[actualMonths.length-1];
+    const lastIdx = SCURVE_DATA.indexOf(lastD);
+    const lpx = PAD.l + lastIdx*xStep + xStep/2;
+    const lpy = PAD.t + cH*(1 - actualByMonth[lastD.no]/100);
+    ctx.beginPath(); ctx.fillStyle='#16a34a';
+    ctx.arc(lpx, lpy, 4, 0, Math.PI*2); ctx.fill();
+    // label
+    ctx.fillStyle='#15803d'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(actualByMonth[lastD.no].toFixed(2)+'%', lpx, lpy-8);
+  }
+
+  // ── Marker เดือนปัจจุบัน ──────────────────────────────────────────────────
+  const curIdx = SCURVE_DATA.findIndex(d=>d.no===curMonthNo);
+  if(curIdx>=0){
+    const px = PAD.l + curIdx*xStep + xStep/2;
+    ctx.setLineDash([4,3]); ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(px,PAD.t); ctx.lineTo(px,PAD.t+cH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#d97706'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('▼ ปัจจุบัน', px, PAD.t-8);
+  }
+
+  // ── Legend ────────────────────────────────────────────────────────────────
+  const lgx = PAD.l+cW-100, lgy = PAD.t+8;
+  [[' แผน','#3b82f6'],[' จริง','#22c55e']].forEach(([lbl,c],i)=>{
+    ctx.strokeStyle=c; ctx.lineWidth=2; ctx.fillStyle=c;
+    ctx.beginPath(); ctx.moveTo(lgx+i*60, lgy); ctx.lineTo(lgx+i*60+16, lgy); ctx.stroke();
+    ctx.font='9px sans-serif'; ctx.fillStyle='#475569'; ctx.textAlign='left';
+    ctx.fillText(lbl, lgx+i*60+18, lgy+3);
+  });
 }
 
 // ===================== DASHBOARD =====================
@@ -1025,6 +1430,9 @@ function renderHistory(){
   });
   document.getElementById('hist-tbody').innerHTML=html;
   lucide.createIcons();
+  // Sync hscroll bar when user scrolls pv-outer by touch/mouse
+  const pvOuter = document.getElementById('pv-outer');
+  if (pvOuter) pvOuter.addEventListener('scroll', syncPvHScrollBar);
 }
 
 // ===================== CATEGORY MODAL =====================
@@ -1295,13 +1703,14 @@ function getPvAxisGroups() {
   return groups.sort((a,b) => a.sta - b.sta);
 }
 
+const PV_FIXED_SCALE = 5.5;
+
 function initPvSelects() {
   const groups = getPvAxisGroups();
   const fromSel = document.getElementById('pv-from');
   const toSel   = document.getElementById('pv-to');
   const scaleEl = document.getElementById('pv-scale');
 
-  // สร้าง options ใหม่ทุกครั้ง
   fromSel.innerHTML = '';
   toSel.innerHTML   = '';
   groups.forEach((g, i) => {
@@ -1311,32 +1720,41 @@ function initPvSelects() {
   });
 
   if (!pvState.ready) {
-    // ครั้งแรกเท่านั้น — set default
     pvState.to    = Math.min(groups.length - 1, 19);
+    pvState.scale = PV_FIXED_SCALE;
     pvState.ready = true;
   }
-
-  // คืนค่าจาก pvState เสมอ (ค้างตำแหน่งเมื่อกลับมา)
-  fromSel.value        = pvState.from;
-  toSel.value          = pvState.to;
-  scaleEl.value        = pvState.scale;
-  document.getElementById('pv-scale-label').textContent = pvState.scale + '×';
+  fromSel.value = pvState.from;
+  toSel.value   = pvState.to;
+  if (scaleEl) scaleEl.value = PV_FIXED_SCALE;
 }
 
 function onPvScaleChange() {
-  const v = document.getElementById('pv-scale').value;
-  pvState.scale = parseFloat(v);
-  document.getElementById('pv-scale-label').textContent = v + '×';
-  renderPlanView();
+  // Scale ถูกล็อคที่ 5.5x
+}
+
+function onPvHScroll(val) {
+  const outer = document.getElementById('pv-outer');
+  if (!outer) return;
+  const max = outer.scrollWidth - outer.clientWidth;
+  outer.scrollLeft = (val / 100) * max;
+}
+
+function syncPvHScrollBar() {
+  const outer = document.getElementById('pv-outer');
+  const bar   = document.getElementById('pv-hscroll');
+  if (!outer || !bar) return;
+  const max = outer.scrollWidth - outer.clientWidth;
+  bar.value = max > 0 ? (outer.scrollLeft / max) * 100 : 0;
 }
 
 function renderPlanView() {
   const groups = getPvAxisGroups();
   const fromIdx = parseInt(document.getElementById('pv-from').value);
   const toIdx   = parseInt(document.getElementById('pv-to').value);
-  const scale   = parseFloat(document.getElementById('pv-scale').value);
+  const scale = PV_FIXED_SCALE;
 
-  // บันทึก state ทุกครั้งที่ render (ค้างตำแหน่งเมื่อเปลี่ยนแถบ)
+  // บันทึก state ทุกครั้งที่ render
   pvState.from  = fromIdx;
   pvState.to    = toIdx;
   pvState.scale = scale;
@@ -1495,6 +1913,162 @@ function renderPlanView() {
 
   svg += '</svg>';
   document.getElementById('pv-canvas').innerHTML = svg;
+  renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW);
+}
+
+// ─── Plan View Detail Table (per axis, aligned with SVG) ──────────────────────
+function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW) {
+  const strip = document.getElementById('pv-detail-strip');
+  if (!strip) return;
+  strip.style.width    = totalW + 'px';
+  strip.style.position = 'relative';
+
+  const TABLE_W = 132; // px per card
+  const GAP     = 4;   // min gap between cards
+  const ROW_H_UNIT = 18; // px per pile row
+  const HEADER_H   = 20; // card header
+  const FOOTER_H   = 18; // grand total row
+  const PAD_TOP    = 8;
+
+  // ── Build card list with x positions ────────────────────────────────────
+  const cards = [];
+
+  visible.forEach(group => {
+    const gx = LEFT_PAD + (group.sta - staStart) * pxPerM;
+    const allPiles = [];
+    group.axes.forEach(ax => {
+      (AXIS_PLAN[ax]?.piles || []).forEach(p => allPiles.push(p));
+    });
+    if (!allPiles.length) return;
+
+    const d0 = AXIS_PLAN[group.axes[0]] || {};
+    const dia = d0.dia || '—';
+    const isStaticTest = group.axes.some(ax => ax.includes('Static Test'));
+
+    let totalSoil = 0, totalRock = 0;
+    let firstDate = null, lastDate = null;
+    let hasAny = false;
+
+    const fmtD = d => { if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${parseInt(dd)}/${parseInt(m)}/${String(y).slice(2)}`; };
+    const fmtV = v => v != null ? v.toFixed(2) : '-';
+
+    const pileRows = allPiles.map(p => {
+      const rec = records.filter(r => r.pile_id === p.id)
+                         .sort((a,b) => new Date(a.date)-new Date(b.date));
+      const r0 = rec[0] || null;
+      const soil  = r0 ? (r0.soil_depth || 0) : null;
+      const rock  = r0 ? (r0.rock_depth || 0) : null;
+      const start = r0 ? r0.date : null;
+      const finish= rec.length ? rec[rec.length-1].date : null;
+      if (r0) {
+        hasAny = true;
+        totalSoil += soil || 0;
+        totalRock += rock || 0;
+        if (!firstDate || start < firstDate) firstDate = start;
+        if (!lastDate || (finish && finish > lastDate)) lastDate = finish;
+      }
+      const bNum   = p.id.split('-').pop();
+      const isDone = rec.length > 0;
+      const isWip  = wipPiles.has(p.id);
+      const rowBg  = isDone ? '#f0fdf4' : isWip ? '#fefce8' : '#fff';
+      const dotCol = isDone ? '#22c55e' : isWip ? '#ca8a04' : '#cbd5e1';
+      return `<tr style="background:${rowBg};border-bottom:1px solid #f1f5f9">
+        <td style="padding:2px 5px;font-weight:700;font-size:10px;color:#475569;white-space:nowrap">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotCol};margin-right:3px;vertical-align:middle"></span>${bNum}
+        </td>
+        <td style="padding:2px 4px;font-size:9px;color:#64748b;white-space:nowrap">${fmtD(start)}</td>
+        <td style="padding:2px 4px;font-size:9px;color:#64748b;white-space:nowrap">${fmtD(finish)}</td>
+        <td style="padding:2px 4px;font-size:9px;text-align:right;color:#0369a1">${fmtV(soil)}</td>
+        <td style="padding:2px 4px;font-size:9px;text-align:right;color:#0e7490">${fmtV(rock)}</td>
+        <td style="padding:2px 4px;font-size:9px;text-align:right;font-weight:600;color:#1e293b">${(soil!=null||rock!=null)?fmtV((soil||0)+(rock||0)):'-'}</td>
+      </tr>`;
+    }).join('');
+
+    const gtRow = `<tr style="background:#f8fafc;border-top:1.5px solid #cbd5e1">
+      <td colspan="2" style="padding:3px 5px;font-size:9px;font-weight:700;color:#334155">Grand Total</td>
+      <td style="padding:3px 4px;font-size:9px;color:#64748b;white-space:nowrap">${fmtD(lastDate)}</td>
+      <td style="padding:3px 4px;font-size:9px;text-align:right;color:#0369a1;font-weight:700">${hasAny?totalSoil.toFixed(2):'-'}</td>
+      <td style="padding:3px 4px;font-size:9px;text-align:right;color:#0e7490;font-weight:700">${hasAny?totalRock.toFixed(2):'-'}</td>
+      <td style="padding:3px 4px;font-size:9px;text-align:right;font-weight:700;color:#1e293b">${hasAny?(totalSoil+totalRock).toFixed(2):'-'}</td>
+    </tr>`;
+
+    const headerColor = isStaticTest ? '#7c3aed' : '#1e40af';
+    const cardH = HEADER_H + allPiles.length * ROW_H_UNIT + FOOTER_H;
+
+    cards.push({
+      group, gx, isStaticTest, dia, headerColor,
+      allPiles, pileRows, gtRow, hasAny,
+      totalSoil, totalRock, cardH,
+      left: Math.max(0, gx - TABLE_W/2),
+      isStaticTest,
+      row: 0
+    });
+  });
+
+  // ── Overlap detection: assign rows ──────────────────────────────────────
+  cards.sort((a,b) => a.left - b.left);
+
+  const rowEnds = {};
+  cards.forEach(card => {
+    const cardRight = card.left + TABLE_W + 8; // gap 8px
+    // Static Test เริ่มที่ row 1 เสมอ (ไม่ให้ทับกับแถวปกติ)
+    const startRow = card.isStaticTest ? 1 : 0;
+    let placed = false;
+    for (let row = startRow; row <= 5; row++) {
+      if (card.left >= (rowEnds[row] || 0)) {
+        card.row = row;
+        rowEnds[row] = cardRight;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) card.row = 5;
+  });
+
+  // ── Compute row top offsets ──────────────────────────────────────────────
+  // row 0 starts at PAD_TOP
+  // row N starts after max card height of all rows 0..N-1
+  const maxRows = Math.max(...cards.map(c => c.row)) + 1;
+  const rowHeights = Array(maxRows).fill(0);
+  cards.forEach(card => {
+    rowHeights[card.row] = Math.max(rowHeights[card.row], card.cardH);
+  });
+  const rowTops = [PAD_TOP];
+  for (let i = 1; i < maxRows; i++) {
+    rowTops[i] = rowTops[i-1] + rowHeights[i-1] + (3 * ROW_H_UNIT); // 3 แถว gap
+  }
+  const totalStripH = rowTops[maxRows-1] + rowHeights[maxRows-1] + PAD_TOP;
+
+  // ── Render HTML ──────────────────────────────────────────────────────────
+  let html = `<div style="position:relative;height:${totalStripH}px">`;
+
+  cards.forEach(card => {
+    const topPx = rowTops[card.row];
+    html += `<div style="position:absolute;left:${card.left.toFixed(0)}px;top:${topPx}px;width:${TABLE_W}px">
+      <div style="background:${card.headerColor};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:space-between;gap:4px">
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${card.group.baseKey}</span>
+        <span style="white-space:nowrap;opacity:0.85">Ø${card.dia}m</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 4px 4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+        <thead>
+          <tr style="background:#f1f5f9">
+            <th style="padding:2px 5px;font-size:8px;color:#64748b;text-align:left;border-bottom:1px solid #e2e8f0">Pile</th>
+            <th style="padding:2px 4px;font-size:8px;color:#64748b;border-bottom:1px solid #e2e8f0">Start</th>
+            <th style="padding:2px 4px;font-size:8px;color:#64748b;border-bottom:1px solid #e2e8f0">Finish</th>
+            <th style="padding:2px 4px;font-size:8px;color:#0369a1;text-align:right;border-bottom:1px solid #e2e8f0">Soil</th>
+            <th style="padding:2px 4px;font-size:8px;color:#0e7490;text-align:right;border-bottom:1px solid #e2e8f0">Rock</th>
+            <th style="padding:2px 4px;font-size:8px;color:#1e293b;text-align:right;border-bottom:1px solid #e2e8f0">Total</th>
+          </tr>
+        </thead>
+        <tbody>${card.pileRows}</tbody>
+        <tfoot>${card.gtRow}</tfoot>
+      </table>
+    </div>`;
+  });
+
+  html += '</div>';
+  strip.style.height = totalStripH + 'px';
+  strip.innerHTML = html;
 }
 
 // ─── Plan View popup (click-based) ────────────────────────────────────────────
