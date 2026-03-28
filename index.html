@@ -549,11 +549,17 @@ const pvState = { from: 0, to: 19, scale: 3, ready: false };
 // กำลังดำเนินการ — เก็บ pile_id ที่มีสถานะ WIP
 const WIP_KEY = 'railway_p03_wip_v1';
 let wipPiles = new Set(JSON.parse(localStorage.getItem(WIP_KEY)||'[]'));
-function saveWip(){ localStorage.setItem(WIP_KEY, JSON.stringify([...wipPiles])); }
+
+function saveWip(){
+  localStorage.setItem(WIP_KEY, JSON.stringify([...wipPiles]));
+}
+
 function toggleWip(pileId){
   if(wipPiles.has(pileId)) wipPiles.delete(pileId);
   else wipPiles.add(pileId);
   saveWip();
+  // Push WIP state ไป Google Sheets เพื่อให้ทุก device เห็น
+  gasPush('wip_update', { wip: [...wipPiles] });
   renderPlanView();
   // อัปเดต popup ใหม่ (ถ้ายังเปิดอยู่)
   const pop = document.getElementById('pv-tooltip');
@@ -629,6 +635,22 @@ async function gasPull() {
     updateDashboard();
     renderHistory();
     renderPileTable();
+
+    // Pull WIP state
+    try {
+      const wipRes  = await fetch(GAS_URL + '?action=get_wip&t=' + Date.now());
+      const wipData = await wipRes.json();
+      if (Array.isArray(wipData)) {
+        wipPiles = new Set(wipData);
+        saveWip();
+        // Re-render Plan View ถ้าเปิดอยู่
+        if (document.getElementById('view-plan') &&
+            !document.getElementById('view-plan').classList.contains('hidden')) {
+          renderPlanView();
+        }
+      }
+    } catch(e) { /* ถ้า WIP pull fail ใช้ค่า local ไปก่อน */ }
+
     return true;
   } catch(e) { return false; }
 }
