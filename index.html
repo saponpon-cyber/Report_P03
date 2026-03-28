@@ -1536,12 +1536,19 @@ function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW) {
 
     const fmtD = d => { if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${parseInt(dd)}/${parseInt(m)}/${String(y).slice(2)}`; };
     const fmtV = v => v != null ? v.toFixed(2) : '-';
+    // Soil from Cut-off = soil_depth - (top_casing - pile_cutoff)
+    const soilCO = r0 => {
+      if (!r0 || !r0.soil_depth) return null;
+      if (r0.top_casing != null && r0.pile_cutoff != null)
+        return r0.soil_depth - (r0.top_casing - r0.pile_cutoff);
+      return r0.soil_depth; // ถ้าไม่มี casing/cutoff ใช้ soil_depth ตรงๆ
+    };
 
     const pileRows = allPiles.map(p => {
       const rec = records.filter(r => r.pile_id === p.id)
                          .sort((a,b) => new Date(a.date)-new Date(b.date));
       const r0 = rec[0] || null;
-      const soil  = r0 ? (r0.soil_depth || 0) : null;
+      const soil  = soilCO(r0);
       const rock  = r0 ? (r0.rock_depth || 0) : null;
       const start = r0 ? r0.date : null;
       const finish= rec.length ? rec[rec.length-1].date : null;
@@ -1640,7 +1647,7 @@ function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW) {
             <th style="padding:2px 5px;font-size:8px;color:#64748b;text-align:left;border-bottom:1px solid #e2e8f0">Pile</th>
             <th style="padding:2px 4px;font-size:8px;color:#64748b;border-bottom:1px solid #e2e8f0">Start</th>
             <th style="padding:2px 4px;font-size:8px;color:#64748b;border-bottom:1px solid #e2e8f0">Finish</th>
-            <th style="padding:2px 4px;font-size:8px;color:#0369a1;text-align:right;border-bottom:1px solid #e2e8f0">Soil</th>
+            <th style="padding:2px 4px;font-size:8px;color:#0369a1;text-align:right;border-bottom:1px solid #e2e8f0">Soil-co</th>
             <th style="padding:2px 4px;font-size:8px;color:#0e7490;text-align:right;border-bottom:1px solid #e2e8f0">Rock</th>
             <th style="padding:2px 4px;font-size:8px;color:#1e293b;text-align:right;border-bottom:1px solid #e2e8f0">Total</th>
           </tr>
