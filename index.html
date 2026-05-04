@@ -98,7 +98,7 @@ th{position:sticky;top:0;z-index:2}
     <div class="px-4 sm:px-6 py-3 border-b border-gray-100 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <i data-lucide="banknote" class="w-5 h-5 text-green-600"></i>
-        <h2 class="font-bold text-gray-800">มูลค่างานที่ทำแล้ว (Earned Value)</h2>
+        <h2 class="font-bold text-gray-800">มูลค่างาน Bored Pile</h2>
         <span class="text-xs text-gray-400">Bill 4.2 Piling Works</span>
       </div>
     </div>
@@ -153,6 +153,62 @@ th{position:sticky;top:0;z-index:2}
 
 
   <!-- Summary Table -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden mb-5">
+    <div class="px-4 sm:px-6 py-3 border-b border-gray-100 flex items-center gap-2">
+      <i data-lucide="building-2" class="w-5 h-5 text-purple-600"></i>
+      <h2 class="font-bold text-gray-800">มูลค่างาน Elevated Structure</h2>
+      <span class="text-xs text-gray-400">Bill 4.201-003</span>
+    </div>
+    <!-- KPI row -->
+    <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">มูลค่าสัญญารวม</p>
+        <p class="text-lg font-black text-gray-700 mt-1">1,453,537,324</p>
+        <p class="text-xs text-gray-400">บาท</p>
+      </div>
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">มูลค่างานที่ทำแล้ว</p>
+        <p id="ev4201-earned" class="text-lg font-black text-purple-600 mt-1">—</p>
+        <p class="text-xs text-gray-400">บาท</p>
+      </div>
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">% มูลค่า</p>
+        <p id="ev4201-pct" class="text-lg font-black text-blue-600 mt-1">—</p>
+        <div class="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden mx-4">
+          <div id="ev4201-prog" class="h-full bg-purple-500 transition-all" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Flat table (same style as Bored Pile) -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-200">
+            <th class="px-3 py-2.5 text-left font-semibold text-gray-600">หมวด</th>
+            <th class="px-3 py-2.5 text-left font-semibold text-gray-600">รายการ</th>
+            <th class="px-3 py-2.5 text-right font-semibold text-gray-600">หน่วย</th>
+            <th class="px-3 py-2.5 text-right font-semibold text-gray-600">ปริมาณสัญญา</th>
+            <th class="px-3 py-2.5 text-right font-semibold text-gray-600">ปริมาณทำแล้ว</th>
+            <th class="px-3 py-2.5 text-right font-semibold text-gray-600">ราคา/หน่วย</th>
+            <th class="px-3 py-2.5 text-right font-semibold text-gray-600">มูลค่าสัญญา (บาท)</th>
+            <th class="px-3 py-2.5 text-right font-semibold text-gray-600">มูลค่าทำแล้ว (บาท)</th>
+            <th class="px-3 py-2.5 text-center font-semibold text-gray-600 w-24">%</th>
+          </tr>
+        </thead>
+        <tbody id="ev4201-tbody"></tbody>
+        <tfoot>
+          <tr class="bg-purple-50 font-bold border-t-2 border-purple-200">
+            <td colspan="6" class="px-3 py-2.5 text-gray-700">รวมทั้งหมด</td>
+            <td class="px-3 py-2.5 text-right text-gray-600">1,453,537,324</td>
+            <td class="px-3 py-2.5 text-right text-purple-700" id="ev4201-foot-earned">—</td>
+            <td class="px-3 py-2.5 text-center text-blue-700" id="ev4201-foot-pct">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Original Summary Table -->
   <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
     <div class="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center gap-2">
       <i data-lucide="clipboard" class="w-5 h-5 text-blue-600"></i>
@@ -946,7 +1002,91 @@ const BOQ = [
    itemIds:['slt-150'], depthType:'sonicLM'},
 ];
 
-let records = [];
+// ===================== BOQ RATES (Bill 4.201-003) =====================
+// มูลค่าสัญญา Bill 4.201-003 = 1,453,537,323.55 บาท
+const BOQ_4201 = {
+  contractTotal: 1453537323.55,
+  sections: [
+    {
+      id:'a', code:'a = 25%', weight:0.25,
+      label:'โครงสร้างฐานรากแล้วเสร็จ (Footing)',
+      contractTotal: 363384330.89,
+      items: [
+        {id:'ft-vp1',  label:'Footing - TYPE VP1',  unit:'ea.', qty:136, rate:2138219.1782,    total:290797808.24, itemIds:['ft-001']},
+        {id:'ft-vp1s', label:'Footing - TYPE VP1S', unit:'ea.', qty:16,  rate:1272378.2362,    total:20358051.78,  itemIds:['ft-002']},
+        {id:'ft-vp2a', label:'Footing - TYPE VP2A', unit:'ea.', qty:4,   rate:3781877.1642,    total:15127508.66,  itemIds:['ft-003']},
+        {id:'ft-vp2b', label:'Footing - TYPE VP2B', unit:'ea.', qty:2,   rate:3781877.1642,    total:7563754.33,   itemIds:['ft-004']},
+        {id:'ft-f6',   label:'Footing - TYPE F6',   unit:'ea.', qty:36,  rate:820477.9966,     total:29537207.88,  itemIds:['ft-005']},
+      ]
+    },
+    {
+      id:'b1', code:'b.1', weight:0.1918,
+      label:'Column',
+      contractTotal: 278788458.66,
+      items: [
+        {id:'col-vp1',  label:'Column - TYPE VP1',  unit:'ea.', qty:136, rate:1469237.92808023, total:199816358.22, itemIds:['col-001'], filter:'VP1'},
+        {id:'col-vp1s', label:'Column - TYPE VP1S', unit:'ea.', qty:16,  rate:1127737.91251746, total:18043806.60,  itemIds:['col-001'], filter:'VP1S'},
+        {id:'col-vp2a', label:'Column - TYPE VP2A', unit:'ea.', qty:4,   rate:3382326.70452831, total:13529306.82,  itemIds:['col-001'], filter:'VP2A'},
+        {id:'col-vp2b', label:'Column - TYPE VP2B', unit:'ea.', qty:2,   rate:3161609.5859134,  total:6323219.17,   itemIds:['col-001'], filter:'VP2B'},
+        {id:'col-f6',   label:'Column - TYPE F6',   unit:'ea.', qty:36,  rate:1140993.55132707, total:41075767.85,  itemIds:['col-001'], filter:'F6'},
+      ]
+    },
+    {
+      id:'b2', code:'b.2', weight:0.0582,
+      label:'Crossbeam & Portal Frame',
+      contractTotal: 84595872.23,
+      items: [
+        {id:'cb-vp2a', label:'Crossbeam - TYPE VP2A',    unit:'ea.', qty:4,  rate:4905047.22875417, total:19620188.92, itemIds:['col-002']},
+        {id:'cb-vp2b', label:'Crossbeam - TYPE VP2B',    unit:'ea.', qty:2,  rate:4879324.93131582, total:9758649.86,  itemIds:['col-003']},
+        {id:'cb-pf18', label:'Portal Frame 18.30 m.',    unit:'ea.', qty:16, rate:3020117.50502853, total:48321880.08, itemIds:['col-004']},
+        {id:'cb-pf20', label:'Portal Frame 20.50 m.',    unit:'ea.', qty:2,  rate:3447576.6859,     total:6895153.37,  itemIds:['col-005']},
+      ]
+    },
+    {
+      id:'c1', code:'c.1 = 30%', weight:0.2994,
+      label:'ชิ้นงานคอนกรีตสำเร็จรูปที่นำส่งเข้าหน่วยงาน',
+      contractTotal: 435269142.61,
+      pending: true,
+      items: [
+        {id:'seg-bg30-d',  label:'Segment Type BG30 (ส่งมอบ)',  unit:'m.',  qty:4108.911, rate:73996.07771,     total:304043297.66, itemIds:[]},
+        {id:'seg-bg30s-d', label:'Segment Type BG30S (ส่งมอบ)', unit:'m.',  qty:1650,     rate:70738.54302,     total:116718595.98, itemIds:[]},
+        {id:'seg-ig-d',    label:'I-Girder (ส่งมอบ)',           unit:'ea.', qty:17,       rate:853367.58666745, total:14507248.97,  itemIds:[]},
+      ]
+    },
+    {
+      id:'c2', code:'c.2 = 10%', weight:0.1005,
+      label:'ติดตั้งโครงสร้างส่วนบน (Super Structure)',
+      contractTotal: 127976570.26,
+      pending: true,
+      items: [
+        {id:'seg-bg30-i',  label:'Segment Type BG30 (ติดตั้ง)',  unit:'m.',  qty:4108.911, rate:21526.34961570, total:88449854.73, itemIds:[]},
+        {id:'seg-bg30s-i', label:'Segment Type BG30S (ติดตั้ง)', unit:'m.',  qty:1650,     rate:21526.34961570, total:35518476.87, itemIds:[]},
+        {id:'seg-ig-i',    label:'I-Girder (ติดตั้ง)',           unit:'ea.', qty:17,       rate:235778.74466195,total:4008238.66,  itemIds:[]},
+      ]
+    },
+    {
+      id:'ct', code:'Cable Trough', weight:0.0125,
+      label:'Cable Trough on Elevated Railway',
+      contractTotal: 18169216.54,
+      pending: true,
+      items: [
+        {id:'ct-bg30',  label:'Cable Trough - Type BG30',  unit:'m.', qty:4108.911, rate:3682.518096572, total:15131139.11, itemIds:['ct-001']},
+        {id:'ct-bg30s', label:'Cable Trough - Type BG30S', unit:'m.', qty:1650,     rate:1841.259048286, total:3038077.43,  itemIds:['ct-001']},
+      ]
+    },
+    {
+      id:'d', code:'d = 10%', weight:0.10,
+      label:'ราวสะพานคอนกรีต (Concrete Barrier) + Handrail',
+      contractTotal: 145353732.36,
+      pending: true,
+      items: [
+        {id:'cb-barrier', label:'Concrete Barrier + Handrail', unit:'m.', qty:11517.822, rate:12619.89743851, total:145353732.36, itemIds:['cb-001']},
+      ]
+    },
+  ]
+};
+
+
 let pendingDeleteId = null;
 let calDate = new Date();
 let _autoSyncTimer = null;
@@ -1536,6 +1676,81 @@ function printPayment(){
   setTimeout(()=>win.print(),700);
 }
 
+// ===================== EARNED VALUE 4.201-003 =====================
+function calcEV4201(){
+  const fmt  = n => Math.round(n).toLocaleString('th-TH');
+  const fmt2 = n => n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  let grandEarned = 0;
+  let rows = '';
+
+  BOQ_4201.sections.forEach(sec => {
+    // Section header row
+    rows += '<tr class="bg-gray-50 border-b border-gray-300">'
+      + '<td colspan="9" class="px-3 py-2 font-bold text-gray-700 text-xs">'
+      + '['+sec.code+'] '+sec.label
+      + (sec.pending ? ' <span class="ml-2 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded font-semibold">⏳ รอ Logger</span>' : '')
+      + '</td></tr>';
+
+    sec.items.forEach(it => {
+      let earnedQty = 0;
+      const isPending = sec.pending || !it.itemIds.length;
+
+      if(!isPending){
+        const recs = records.filter(r => it.itemIds.includes(r.item_id));
+        if(it.filter){
+          // Column: นับ AXIS ที่ type ตรง + บันทึกแล้ว
+          const doneLocations = records
+            .filter(r => r.item_id === 'col-001')
+            .map(r => r.pile_id || r.location || '');
+          earnedQty = (AXIS_PLAN||[]).filter(ax => {
+            const t = ax.type||'';
+            const typeMatch =
+              it.filter==='VP1'  ? (t==='VP1' && t!=='VP1S') :
+              it.filter==='VP1S' ? t==='VP1S' :
+              it.filter==='VP2A' ? t==='VP2A' :
+              it.filter==='VP2B' ? t==='VP2B' :
+              it.filter==='F6'   ? (t==='F1'||t.includes('F6')) : false;
+            return typeMatch && doneLocations.some(d => d.includes(String(ax.id)));
+          }).length;
+        } else {
+          earnedQty = recs.reduce((s,r) => s + (r.qty||0), 0);
+        }
+      }
+
+      const earnedVal = isPending ? 0 : Math.min(earnedQty, it.qty) * it.rate;
+      grandEarned += earnedVal;
+      const pct = it.qty > 0 ? (earnedQty/it.qty*100) : 0;
+      const barColor = pct>=75?'#7c3aed':pct>=40?'#f59e0b':'#6366f1';
+
+      rows += '<tr class="border-b border-gray-50 hover:bg-purple-50'+(isPending?' opacity-40':'')+'">'
+        + '<td class="px-3 py-2 text-gray-400 text-center">'+sec.code+'</td>'
+        + '<td class="px-3 py-2 text-gray-700">'+it.label+'</td>'
+        + '<td class="px-3 py-2 text-right text-gray-500">'+it.unit+'</td>'
+        + '<td class="px-3 py-2 text-right text-gray-600">'+fmt2(it.qty)+'</td>'
+        + '<td class="px-3 py-2 text-right font-semibold '+(isPending?'text-gray-300':'text-indigo-700')+'">'+(isPending?'—':fmt2(earnedQty))+'</td>'
+        + '<td class="px-3 py-2 text-right text-gray-500">'+fmt(it.rate)+'</td>'
+        + '<td class="px-3 py-2 text-right text-gray-500">'+fmt(it.total)+'</td>'
+        + '<td class="px-3 py-2 text-right font-bold '+(isPending?'text-gray-300':'text-purple-700')+'">'+(isPending?'—':fmt(earnedVal))+'</td>'
+        + '<td class="px-3 py-2">'
+        + (isPending
+            ? '<span class="text-xs text-amber-500 font-semibold">⏳</span>'
+            : '<div class="flex items-center gap-1"><div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div style="width:'+Math.min(pct,100)+'%;background:'+barColor+'" class="h-full rounded-full"></div></div><span class="text-gray-600 font-semibold text-xs w-9 text-right">'+pct.toFixed(1)+'%</span></div>'
+          )
+        + '</td></tr>';
+    });
+  });
+
+  const grandPct = BOQ_4201.contractTotal > 0 ? (grandEarned/BOQ_4201.contractTotal*100) : 0;
+  document.getElementById('ev4201-earned').textContent      = fmt(grandEarned);
+  document.getElementById('ev4201-pct').textContent         = grandPct.toFixed(2)+'%';
+  document.getElementById('ev4201-prog').style.width        = Math.min(grandPct,100)+'%';
+  document.getElementById('ev4201-tbody').innerHTML         = rows;
+  document.getElementById('ev4201-foot-earned').textContent = fmt(grandEarned);
+  document.getElementById('ev4201-foot-pct').textContent    = grandPct.toFixed(2)+'%';
+}
+
+
 // ===================== EARNED VALUE =====================
 function calcEarnedValue(){
   const fmt  = n => n.toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:0});
@@ -1680,6 +1895,7 @@ function updateDashboard(){
 
   renderSummaryTable();
   calcEarnedValue();
+  calcEV4201();
 }
 
 function renderSummaryTable(){
