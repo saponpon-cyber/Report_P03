@@ -1012,11 +1012,11 @@ const BOQ_4201 = {
       label:'โครงสร้างฐานรากแล้วเสร็จ (Footing)',
       contractTotal: 363384330.89,
       items: [
-        {id:'ft-vp1',  label:'Footing - TYPE VP1',  unit:'ea.', qty:136, rate:2138219.1782,    total:290797808.24, itemIds:['ft-001']},
-        {id:'ft-vp1s', label:'Footing - TYPE VP1S', unit:'ea.', qty:16,  rate:1272378.2362,    total:20358051.78,  itemIds:['ft-002']},
-        {id:'ft-vp2a', label:'Footing - TYPE VP2A', unit:'ea.', qty:4,   rate:3781877.1642,    total:15127508.66,  itemIds:['ft-003']},
-        {id:'ft-vp2b', label:'Footing - TYPE VP2B', unit:'ea.', qty:2,   rate:3781877.1642,    total:7563754.33,   itemIds:['ft-004']},
-        {id:'ft-f6',   label:'Footing - TYPE F6',   unit:'ea.', qty:36,  rate:820477.9966,     total:29537207.88,  itemIds:['ft-005']},
+        {id:'ft-vp1',  label:'Footing - TYPE VP1',  unit:'ea.', qty:136, rate:2138219.1782,    total:290797808.24, itemIds:['ft-001'], filter:'VP1'},
+        {id:'ft-vp1s', label:'Footing - TYPE VP1S', unit:'ea.', qty:16,  rate:1272378.2362,    total:20358051.78,  itemIds:['ft-002'], filter:'VP1S'},
+        {id:'ft-vp2a', label:'Footing - TYPE VP2A', unit:'ea.', qty:4,   rate:3781877.1642,    total:15127508.66,  itemIds:['ft-003'], filter:'VP2A'},
+        {id:'ft-vp2b', label:'Footing - TYPE VP2B', unit:'ea.', qty:2,   rate:3781877.1642,    total:7563754.33,   itemIds:['ft-004'], filter:'VP2B'},
+        {id:'ft-f6',   label:'Footing - TYPE F6',   unit:'ea.', qty:36,  rate:820477.9966,     total:29537207.88,  itemIds:['ft-005'], filter:'F6'},
       ]
     },
     {
@@ -1699,19 +1699,20 @@ function calcEV4201(){
       if(!isPending){
         const recs = records.filter(r => it.itemIds.includes(r.item_id));
         if(it.filter){
-          // Column: นับ AXIS ที่ type ตรง + บันทึกแล้ว
+          // Footing/Column: นับ AXIS ที่ footing/column type ตรง + บันทึกแล้ว
+          const isFooting = it.id.startsWith('ft-');
           const doneLocations = records
-            .filter(r => r.item_id === 'col-001')
+            .filter(r => it.itemIds.includes(r.item_id))
             .map(r => r.pile_id || r.location || '');
-          earnedQty = (AXIS_PLAN||[]).filter(ax => {
-            const t = ax.type||'';
+          earnedQty = Object.entries(AXIS_PLAN).filter(([axKey, ax]) => {
+            const t = isFooting ? (ax.footing||'') : (ax.column||ax.footing||'');
             const typeMatch =
-              it.filter==='VP1'  ? (t==='VP1' && t!=='VP1S') :
-              it.filter==='VP1S' ? t==='VP1S' :
-              it.filter==='VP2A' ? t==='VP2A' :
-              it.filter==='VP2B' ? t==='VP2B' :
-              it.filter==='F6'   ? (t==='F1'||t.includes('F6')) : false;
-            return typeMatch && doneLocations.some(d => d.includes(String(ax.id)));
+              it.filter==='VP1'  ? (t==='VP1') :
+              it.filter==='VP1S' ? (t==='VP1S') :
+              it.filter==='VP2A' ? (t==='VP2A') :
+              it.filter==='VP2B' ? (t==='VP2B') :
+              it.filter==='F6'   ? (t==='F6/C4'||t==='F1'||t.includes('F6')) : false;
+            return typeMatch && doneLocations.some(d => d && d.includes(axKey));
           }).length;
         } else {
           earnedQty = recs.reduce((s,r) => s + (r.qty||0), 0);
