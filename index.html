@@ -56,6 +56,7 @@ th{position:sticky;top:0;z-index:2}
       <button id="tab-history" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('history')"><i data-lucide="history" class="w-4 h-4"></i>ประวัติ</button>
       <button id="tab-calendar" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('calendar')"><i data-lucide="calendar" class="w-4 h-4"></i>ปฏิทิน</button>
       <button id="tab-plan" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('plan')"><i data-lucide="map" class="w-4 h-4"></i>Plan View</button>
+      <button id="tab-payment" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('payment')"><i data-lucide="file-text" class="w-4 h-4"></i>Payment</button>
     </div>
   </div>
 </header>
@@ -91,6 +92,65 @@ th{position:sticky;top:0;z-index:2}
       <p class="text-xs text-purple-500 font-semibold mt-1"><span id="pct-col">0</span>% สำเร็จ</p>
     </div>
   </div>
+
+  <!-- Earned Value Panel -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden mb-5">
+    <div class="px-4 sm:px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="banknote" class="w-5 h-5 text-green-600"></i>
+        <h2 class="font-bold text-gray-800">มูลค่างานที่ทำแล้ว (Earned Value)</h2>
+        <span class="text-xs text-gray-400">Bill 4.2 Piling Works</span>
+      </div>
+    </div>
+    <!-- KPI row -->
+    <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">มูลค่าสัญญารวม</p>
+        <p id="ev-contract" class="text-lg font-black text-gray-700 mt-1">640,962,676</p>
+        <p class="text-xs text-gray-400">บาท</p>
+      </div>
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">มูลค่างานที่ทำแล้ว</p>
+        <p id="ev-earned" class="text-lg font-black text-green-600 mt-1">—</p>
+        <p class="text-xs text-gray-400">บาท</p>
+      </div>
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">% มูลค่า</p>
+        <p id="ev-pct" class="text-lg font-black text-blue-600 mt-1">—</p>
+        <div class="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden mx-4">
+          <div id="ev-prog" class="h-full bg-green-500 transition-all" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Detail table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-200">
+            <th class="px-3 py-2 text-left font-semibold text-gray-600">รายการ</th>
+            <th class="px-3 py-2 text-center font-semibold text-gray-600">รหัส</th>
+            <th class="px-3 py-2 text-right font-semibold text-gray-600">หน่วย</th>
+            <th class="px-3 py-2 text-right font-semibold text-gray-600">ปริมาณสัญญา</th>
+            <th class="px-3 py-2 text-right font-semibold text-gray-600">ปริมาณทำแล้ว</th>
+            <th class="px-3 py-2 text-right font-semibold text-gray-600">ราคา/หน่วย</th>
+            <th class="px-3 py-2 text-right font-semibold text-gray-600">มูลค่าสัญญา (บาท)</th>
+            <th class="px-3 py-2 text-right font-semibold text-gray-600">มูลค่าทำแล้ว (บาท)</th>
+            <th class="px-3 py-2 text-center font-semibold text-gray-600 w-20">%</th>
+          </tr>
+        </thead>
+        <tbody id="ev-tbody"></tbody>
+        <tfoot>
+          <tr class="bg-green-50 font-bold border-t-2 border-green-200">
+            <td colspan="6" class="px-3 py-2.5 text-left text-gray-700">รวมทั้งหมด</td>
+            <td class="px-3 py-2.5 text-right text-gray-700" id="ev-foot-contract">640,962,676</td>
+            <td class="px-3 py-2.5 text-right text-green-700" id="ev-foot-earned">—</td>
+            <td class="px-3 py-2.5 text-center text-blue-700" id="ev-foot-pct">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
 
   <!-- Summary Table -->
   <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
@@ -173,7 +233,14 @@ th{position:sticky;top:0;z-index:2}
 
       <!-- Location -->
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">ตำแหน่ง / Location</label>
-        <input type="text" id="r-loc" class="w-full px-3 py-3 border border-gray-300 rounded-xl text-sm" placeholder="เช่น P03-40, KM 566+367"></div>
+        <!-- text input (default) -->
+        <input type="text" id="r-loc" class="w-full px-3 py-3 border border-gray-300 rounded-xl text-sm" placeholder="เช่น P03-40, KM 566+367">
+        <!-- dropdown สำหรับ Sonic/Dynamic (ซ่อนไว้ก่อน) -->
+        <select id="r-loc-select" class="hidden w-full px-3 py-3 border border-blue-300 rounded-xl text-sm bg-blue-50 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+          <option value="">— เลือก Pile ID —</option>
+        </select>
+        <p id="r-loc-hint" class="hidden text-xs text-blue-500 mt-1">เลือก Pile ID ที่กำหนดให้ทดสอบ</p>
+      </div>
 
       <!-- Qty + Unit -->
       <div class="grid grid-cols-2 gap-3">
@@ -461,7 +528,281 @@ th{position:sticky;top:0;z-index:2}
   <!-- Tooltip -->
   <div id="pv-tooltip" class="hidden fixed z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-xs" style="max-width:min(280px,90vw);position:fixed"></div>
 </div>
+
+<!-- ===================== PAYMENT ===================== -->
+<div id="view-payment" class="hidden p-3 sm:p-5 max-w-5xl mx-auto space-y-5">
+
+  <!-- ══════════════ SECTION 1: PAYMENT HISTORY ══════════════ -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+    <div class="px-4 sm:px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="landmark" class="w-5 h-5 text-indigo-600"></i>
+        <h2 class="font-bold text-gray-800">ประวัติการเบิกจ่าย (Payment Certificate)</h2>
+      </div>
+      <button onclick="openPayHistModal()"
+        class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition shadow-sm">
+        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>เพิ่มงวดใหม่
+      </button>
+    </div>
+
+    <!-- KPI สรุปสะสม -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100 border-b border-gray-100">
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">งวดล่าสุด</p>
+        <p id="ph-latest-no" class="text-2xl font-black text-indigo-600 mt-1">—</p>
+      </div>
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">รับจริงงวดล่าสุด (บาท)</p>
+        <p id="ph-latest-net" class="text-lg font-black text-green-600 mt-1">—</p>
+      </div>
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">สะสมรวม VAT (บาท)</p>
+        <p id="ph-cum-gross" class="text-lg font-black text-blue-600 mt-1">—</p>
+      </div>
+      <div class="px-4 py-3 text-center">
+        <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">% ของสัญญา</p>
+        <p id="ph-cum-pct" class="text-lg font-black text-amber-600 mt-1">—</p>
+        <div class="mt-1 h-1.5 bg-gray-100 rounded-full mx-4 overflow-hidden">
+          <div id="ph-cum-bar" class="h-full bg-indigo-500 transition-all" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline งวด -->
+    <div id="ph-timeline" class="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+      <div class="flex items-center justify-center py-10 text-gray-400 text-sm gap-2">
+        <i data-lucide="inbox" class="w-4 h-4"></i>ยังไม่มีข้อมูลการเบิกจ่าย — กดเพิ่มงวดใหม่
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ SECTION 2: คำนวณจาก Daily Logger ══════════════ -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-6">
+    <div class="flex items-center gap-2 mb-4">
+      <i data-lucide="calculator" class="w-5 h-5 text-blue-600"></i>
+      <h2 class="font-bold text-gray-800">คำนวณมูลค่างานจากบันทึก</h2>
+      <span class="text-xs text-gray-400">(อ้างอิงจาก BOQ Bill 4.2)</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">วันที่เริ่มต้น</label>
+        <input type="date" id="pay-from" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">วันที่สิ้นสุด</label>
+        <input type="date" id="pay-to" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      </div>
+      <div class="flex items-end gap-2">
+        <button onclick="calcPayment()" class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition shadow-sm">
+          <i data-lucide="calculator" class="w-4 h-4"></i>คำนวณ
+        </button>
+        <button onclick="printPayment()" class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl text-sm transition shadow-sm">
+          <i data-lucide="printer" class="w-4 h-4"></i>Print
+        </button>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <span class="text-xs text-gray-500 self-center">ลัด:</span>
+      <button onclick="setPayMonth(0)"  class="text-xs px-2.5 py-1 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-700 rounded-lg transition font-medium">เดือนนี้</button>
+      <button onclick="setPayMonth(-1)" class="text-xs px-2.5 py-1 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-700 rounded-lg transition font-medium">เดือนที่แล้ว</button>
+      <button onclick="setPayQuarter()" class="text-xs px-2.5 py-1 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-700 rounded-lg transition font-medium">ไตรมาสนี้</button>
+      <button onclick="setPayAll()"     class="text-xs px-2.5 py-1 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-700 rounded-lg transition font-medium">ทั้งหมด</button>
+      <button onclick="fillFromLastCert()" class="text-xs px-2.5 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition font-medium">← งวดล่าสุด</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ RESULT ══════════════ -->
+  <div id="pay-result" class="hidden space-y-5">
+    <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+      <div class="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <p class="text-blue-200 text-xs font-semibold uppercase tracking-wide">ช่วงวันที่</p>
+          <p id="pay-range-label" class="text-lg font-bold mt-0.5">—</p>
+        </div>
+        <div class="text-right">
+          <p class="text-blue-200 text-xs font-semibold uppercase tracking-wide">มูลค่างานงวดนี้ (ก่อน VAT)</p>
+          <p id="pay-total-label" class="text-3xl font-black mt-0.5">0</p>
+          <p class="text-blue-200 text-xs">บาท</p>
+        </div>
+      </div>
+      <!-- การหักเงิน -->
+      <div class="mt-4 border-t border-blue-500 pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
+        <div>
+          <p class="text-blue-300">ก่อน VAT</p>
+          <p id="pay-before-vat" class="font-bold text-base mt-0.5">—</p>
+        </div>
+        <div>
+          <p class="text-blue-300">หักล่วงหน้า 7.5%</p>
+          <p id="pay-deduct-adv" class="font-bold text-base mt-0.5 text-red-300">—</p>
+        </div>
+        <div>
+          <p class="text-blue-300">VAT 7%</p>
+          <p id="pay-vat" class="font-bold text-base mt-0.5">—</p>
+        </div>
+        <div class="bg-white bg-opacity-10 rounded-xl px-2 py-1">
+          <p class="text-blue-200">หักประกัน 5% แล้วรับ</p>
+          <p id="pay-net" class="font-black text-lg mt-0.5 text-yellow-300">—</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-4 border-t border-blue-500 pt-4">
+        <div class="text-center">
+          <p class="text-blue-200 text-xs">จำนวนต้น BP</p>
+          <p id="pay-kpi-bp" class="text-xl font-black">0</p>
+        </div>
+        <div class="text-center border-x border-blue-500">
+          <p class="text-blue-200 text-xs">ความยาวรวม (LM)</p>
+          <p id="pay-kpi-lm" class="text-xl font-black">0</p>
+        </div>
+        <div class="text-center">
+          <p class="text-blue-200 text-xs">รายการทดสอบ</p>
+          <p id="pay-kpi-test" class="text-xl font-black">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOQ Detail -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="table-2" class="w-4 h-4 text-blue-600"></i>
+          <h3 class="font-bold text-gray-800 text-sm">รายละเอียดตาม BOQ</h3>
+        </div>
+        <button onclick="saveAsPayCert()" class="flex items-center gap-1 px-2.5 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-semibold rounded-lg transition">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i>บันทึกเป็นงวด
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200">
+              <th class="px-3 py-2.5 text-left font-semibold text-gray-600">รายการ</th>
+              <th class="px-3 py-2.5 text-center font-semibold text-gray-600">รหัส</th>
+              <th class="px-3 py-2.5 text-right font-semibold text-gray-600">หน่วย</th>
+              <th class="px-3 py-2.5 text-right font-semibold text-gray-600">ปริมาณงวดนี้</th>
+              <th class="px-3 py-2.5 text-right font-semibold text-gray-600">ราคา/หน่วย</th>
+              <th class="px-3 py-2.5 text-right font-semibold text-gray-600">มูลค่างวดนี้ (บาท)</th>
+              <th class="px-3 py-2.5 text-right font-semibold text-gray-600">สะสมถึงงวดนี้ (บาท)</th>
+              <th class="px-3 py-2.5 text-right font-semibold text-gray-600">มูลค่าสัญญา (บาท)</th>
+              <th class="px-3 py-2.5 text-center font-semibold text-gray-600 w-20">%สะสม</th>
+            </tr>
+          </thead>
+          <tbody id="pay-tbody"></tbody>
+          <tfoot>
+            <tr class="bg-blue-50 font-bold border-t-2 border-blue-200">
+              <td colspan="5" class="px-3 py-2.5 text-gray-700">รวมทั้งหมด</td>
+              <td class="px-3 py-2.5 text-right text-blue-700" id="pay-foot-this">—</td>
+              <td class="px-3 py-2.5 text-right text-green-700" id="pay-foot-cum">—</td>
+              <td class="px-3 py-2.5 text-right text-gray-600">640,962,676</td>
+              <td class="px-3 py-2.5 text-center text-blue-700" id="pay-foot-pct">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Records list -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="list" class="w-4 h-4 text-gray-500"></i>
+          <h3 class="font-bold text-gray-800 text-sm">รายการที่นับในงวดนี้</h3>
+        </div>
+        <span id="pay-rec-count" class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">0 รายการ</span>
+      </div>
+      <div class="overflow-x-auto max-h-64">
+        <table class="w-full text-xs">
+          <thead class="bg-gray-50 sticky top-0">
+            <tr>
+              <th class="px-3 py-2 text-left font-semibold text-gray-600">วันที่</th>
+              <th class="px-3 py-2 text-left font-semibold text-gray-600">หมวดงาน</th>
+              <th class="px-3 py-2 text-left font-semibold text-gray-600">ตำแหน่ง</th>
+              <th class="px-3 py-2 text-right font-semibold text-gray-600">ดิน (LM)</th>
+              <th class="px-3 py-2 text-right font-semibold text-gray-600">หิน (LM)</th>
+              <th class="px-3 py-2 text-right font-semibold text-gray-600">มูลค่า (บาท)</th>
+            </tr>
+          </thead>
+          <tbody id="pay-rec-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- end pay-result -->
+</div><!-- end view-payment -->
 </main>
+</div><!-- end app wrapper -->
+
+<!-- ===== PAYMENT HISTORY MODAL ===== -->
+<div id="ph-modal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-3">
+    <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-4 rounded-t-2xl flex items-center justify-between">
+      <h3 id="ph-modal-title" class="font-bold text-white flex items-center gap-2">
+        <i data-lucide="landmark" class="w-5 h-5"></i>เพิ่มข้อมูลการเบิกจ่าย
+      </h3>
+      <button onclick="closePayHistModal()" class="text-indigo-200 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="p-5 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">งวดที่ *</label>
+          <input type="number" id="ph-no" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none" placeholder="1">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">ประเภท</label>
+          <select id="ph-type" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none">
+            <option value="progress">งวดงาน (Progress)</option>
+            <option value="advance">เงินล่วงหน้า (Advance)</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">วันที่เริ่มต้น *</label>
+          <input type="date" id="ph-date-from" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">วันที่สิ้นสุด *</label>
+          <input type="date" id="ph-date-to" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">มูลค่างาน รวม VAT 7% (บาท) *</label>
+        <input type="number" id="ph-gross" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-400 focus:outline-none" placeholder="10,238,680.78">
+        <p class="text-xs text-gray-400 mt-1">จาก Payment Certificate (ข้อ 1)</p>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">หักล่วงหน้า 7.5%</label>
+          <input type="number" id="ph-adv" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm" placeholder="717,664.54">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">หักประกัน 5%</label>
+          <input type="number" id="ph-ret" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm" placeholder="511,934.04">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1 text-green-700">รับจริง (บาท)</label>
+          <input type="number" id="ph-net" step="0.01" class="w-full px-3 py-2 border border-green-300 rounded-xl text-sm bg-green-50" placeholder="8,958,845.68">
+        </div>
+      </div>
+      <!-- Auto-fill hint -->
+      <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+        <p class="text-xs text-indigo-600 font-semibold mb-1">คำนวณอัตโนมัติ (สูตรตามสัญญา):</p>
+        <div class="flex gap-2">
+          <button onclick="autoCalcPay()" class="text-xs px-2.5 py-1 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">คำนวณจากมูลค่า</button>
+          <button onclick="fillFromCalc()" class="text-xs px-2.5 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">ดึงจากผลคำนวณ</button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">หมายเหตุ</label>
+        <input type="text" id="ph-note" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm" placeholder="เช่น เบิกเงินงวดที่ 1">
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button onclick="closePayHistModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition text-sm">ยกเลิก</button>
+        <button id="ph-del-btn" onclick="deletePayCert()" class="hidden py-2.5 px-4 bg-red-100 text-red-600 font-semibold rounded-xl hover:bg-red-200 transition text-sm">ลบ</button>
+        <button onclick="savePayCert()" class="flex-1 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition text-sm flex items-center justify-center gap-1.5">
+          <i data-lucide="save" class="w-4 h-4"></i>บันทึก
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ===== EXPORT TEST MODAL ===== -->
@@ -573,6 +914,37 @@ const STORAGE_KEY = 'railway_p03_records_v2';
 // ─── Master Plan Data (from Master_Plan_rev_0, 22-03-69) ──────────────────────
 // มูลค่างานรายหมวด (บาท) และ % แผน ณ เดือนปัจจุบัน (M6 มี.ค.69)
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbygJr-oa9GLJ046YsdE28qmno3JNJEROggfFszFq3uHeQ1LErJ_9z1T4VkwoK_boL3J/exec';
+// QC System
+
+// ===================== BOQ RATES (Bill 4.2) =====================
+// หน่วย Bored Pile = LM (ต้องใช้ soil_depth/rock_depth ×ราคา)
+// หน่วย Pile Test = EA (นับต้น)
+// หน่วย Sonic = LM depth
+const BOQ = [
+  // Bored Pile — คำนวณจาก depth (LM)
+  {id:'bp-120-soil', label:'Bored Pile Ø1.20m (In Soil)',          code:'4.202-02-01', unit:'LM', contractQty:2560.00,   rate:10842.30,  totalContract:27756288.00,
+   itemIds:['bp-120'], depthType:'soil'},
+  {id:'bp-120-rock', label:'Bored Pile Ø1.20m (In Rock)',           code:'4.202-02-02', unit:'LM', contractQty:110.59,    rate:61307.13,  totalContract:6779955.51,
+   itemIds:['bp-120'], depthType:'rock'},
+  {id:'bp-150-soil', label:'Bored Pile Ø1.50m (In Soil)',          code:'4.202-02-03', unit:'LM', contractQty:26080.00,  rate:16210.45,  totalContract:422768536.00,
+   itemIds:['bp-150'], depthType:'soil'},
+  {id:'bp-150-rock', label:'Bored Pile Ø1.50m (In Rock)',           code:'4.202-02-04', unit:'LM', contractQty:2361.60,   rate:72132.90,  totalContract:170349056.64,
+   itemIds:['bp-150'], depthType:'rock'},
+  // Pile Test — EA
+  {id:'lt-120',      label:'Static Pile Load Test Ø1.20m',          code:'4.203-01-01', unit:'EA', contractQty:1.00,      rate:739842.38, totalContract:739842.38,
+   itemIds:['lt-120'], depthType:'ea'},
+  {id:'lt-150',      label:'Static Pile Load Test Ø1.50m',          code:'4.203-01-02', unit:'EA', contractQty:5.00,      rate:1016242.30,totalContract:5081211.50,
+   itemIds:['lt-150'], depthType:'ea'},
+  {id:'dlt-120',     label:'Dynamic Pile Load Test Ø1.20m',         code:'4.203-02-01', unit:'EA', contractQty:2.00,      rate:60667.58,  totalContract:121335.16,
+   itemIds:['dlt-120'], depthType:'ea'},
+  {id:'dlt-150',     label:'Dynamic Pile Load Test Ø1.50m',         code:'4.203-02-02', unit:'EA', contractQty:26.00,     rate:68558.06,  totalContract:1782509.56,
+   itemIds:['dlt-150'], depthType:'ea'},
+  // Sonic — LM depth (ใช้ qty เป็น LM)
+  {id:'slt-120',     label:'Sonic Logging Test Ø1.20m',             code:'4.203-04-01', unit:'LM', contractQty:276.00,    rate:902.82,    totalContract:249178.32,
+   itemIds:['slt-120'], depthType:'sonicLM'},
+  {id:'slt-150',     label:'Sonic Logging Test Ø1.50m',             code:'4.203-04-02', unit:'LM', contractQty:5909.00,   rate:902.82,    totalContract:5334763.38,
+   itemIds:['slt-150'], depthType:'sonicLM'},
+];
 
 let records = [];
 let pendingDeleteId = null;
@@ -726,7 +1098,7 @@ function showToast(msg,color='green'){
 
 // ===================== TABS =====================
 function switchTab(tab){
-  ['dashboard','record','piles','history','calendar','plan'].forEach(t=>{
+  ['dashboard','record','piles','history','calendar','plan','payment'].forEach(t=>{
     const view=document.getElementById('view-'+t);
     if(view) view.classList.toggle('hidden',t!==tab);
     const btn=document.getElementById('tab-'+t);
@@ -737,8 +1109,545 @@ function switchTab(tab){
   if(tab==='piles')renderPileTable();
   if(tab==='history')renderHistory();
   if(tab==='dashboard')updateDashboard();
+  if(tab==='payment')renderPayTimeline();
 }
 
+
+// ===================== QC SUMMARY =====================
+// ===================== PAYMENT HISTORY =====================
+const PH_KEY = 'railway_p03_payhist_v1';
+let payHistory = JSON.parse(localStorage.getItem(PH_KEY)||'[]');
+let phEditId = null;
+const CONTRACT_GROSS = 2094500000;   // มูลค่าสัญญารวม VAT
+const CONTRACT_NOVAT = 1957476635.51; // ไม่รวม VAT
+
+function savePayHistory(){ localStorage.setItem(PH_KEY, JSON.stringify(payHistory)); }
+
+function renderPayTimeline(){
+  const el = document.getElementById('ph-timeline');
+  if(!payHistory.length){
+    el.innerHTML='<div class="flex items-center justify-center py-10 text-gray-400 text-sm gap-2"><i data-lucide="inbox" class="w-4 h-4"></i>ยังไม่มีข้อมูลการเบิกจ่าย — กดเพิ่มงวดใหม่</div>';
+    lucide.createIcons();
+    // reset KPI
+    ['ph-latest-no','ph-latest-net','ph-cum-gross','ph-cum-pct'].forEach(id=>{
+      document.getElementById(id).textContent='—';
+    });
+    document.getElementById('ph-cum-bar').style.width='0%';
+    return;
+  }
+  const sorted = [...payHistory].sort((a,b)=>a.no-b.no);
+  const cumGross = sorted.reduce((s,p)=>s+(p.gross||0),0);
+  const cumNet   = sorted.reduce((s,p)=>s+(p.net||0),0);
+  const cumPct   = cumGross/CONTRACT_GROSS*100;
+  const last     = sorted[sorted.length-1];
+
+  // KPI
+  document.getElementById('ph-latest-no').textContent   = 'งวด '+last.no;
+  document.getElementById('ph-latest-net').textContent  = fmtB(last.net||0);
+  document.getElementById('ph-cum-gross').textContent   = fmtB(cumGross);
+  document.getElementById('ph-cum-pct').textContent     = cumPct.toFixed(2)+'%';
+  document.getElementById('ph-cum-bar').style.width     = Math.min(cumPct,100)+'%';
+
+  // Timeline rows
+  let html = '';
+  sorted.forEach(p=>{
+    const typeLabel = p.type==='advance'?'เงินล่วงหน้า':'งวดงาน';
+    const typeBg    = p.type==='advance'?'bg-amber-100 text-amber-700':'bg-indigo-100 text-indigo-700';
+    const pct       = (p.gross/CONTRACT_GROSS*100).toFixed(3);
+    html += `<div class="flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition cursor-pointer" onclick="openPayHistModal(${p.id})">
+      <div class="flex-none w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm">${p.no}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold text-gray-800">งวดที่ ${p.no}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded-full font-semibold ${typeBg}">${typeLabel}</span>
+          <span class="text-xs text-gray-400">${fmtD(p.dateFrom)} – ${fmtD(p.dateTo)}</span>
+        </div>
+        <div class="flex items-center gap-4 mt-0.5 flex-wrap">
+          <span class="text-xs text-gray-500">รวม VAT: <span class="font-semibold text-gray-800">${fmtB(p.gross)}</span></span>
+          <span class="text-xs text-gray-500">รับจริง: <span class="font-semibold text-green-700">${fmtB(p.net||0)}</span></span>
+          <span class="text-xs text-gray-400">${pct}% ของสัญญา</span>
+        </div>
+        ${p.note?'<p class="text-xs text-gray-400 mt-0.5 truncate">'+p.note+'</p>':''}
+      </div>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 flex-none"></i>
+    </div>`;
+  });
+  el.innerHTML = html;
+  lucide.createIcons();
+}
+
+function openPayHistModal(id){
+  phEditId = id||null;
+  document.getElementById('ph-modal-title').innerHTML =
+    '<i data-lucide="landmark" class="w-5 h-5"></i>'+(id?'แก้ไขข้อมูลงวด':'เพิ่มข้อมูลการเบิกจ่าย');
+
+  if(id){
+    const p = payHistory.find(x=>x.id===id);
+    if(!p) return;
+    document.getElementById('ph-no').value        = p.no;
+    document.getElementById('ph-type').value      = p.type||'progress';
+    document.getElementById('ph-date-from').value = p.dateFrom;
+    document.getElementById('ph-date-to').value   = p.dateTo;
+    document.getElementById('ph-gross').value     = p.gross;
+    document.getElementById('ph-adv').value       = p.adv||'';
+    document.getElementById('ph-ret').value       = p.ret||'';
+    document.getElementById('ph-net').value       = p.net||'';
+    document.getElementById('ph-note').value      = p.note||'';
+    document.getElementById('ph-del-btn').classList.remove('hidden');
+  } else {
+    document.getElementById('ph-no').value        = (payHistory.length||0)+1;
+    document.getElementById('ph-type').value      = 'progress';
+    document.getElementById('ph-date-from').value = '';
+    document.getElementById('ph-date-to').value   = '';
+    document.getElementById('ph-gross').value     = '';
+    document.getElementById('ph-adv').value       = '';
+    document.getElementById('ph-ret').value       = '';
+    document.getElementById('ph-net').value       = '';
+    document.getElementById('ph-note').value      = '';
+    document.getElementById('ph-del-btn').classList.add('hidden');
+  }
+  document.getElementById('ph-modal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closePayHistModal(){
+  document.getElementById('ph-modal').classList.add('hidden');
+  phEditId = null;
+}
+
+function autoCalcPay(){
+  const gross = parseFloat(document.getElementById('ph-gross').value)||0;
+  if(!gross){ showToast('กรุณากรอกมูลค่ารวม VAT ก่อน','red'); return; }
+  const noVat = gross * 100/107;
+  const adv   = noVat * 0.075;
+  const afterAdv = noVat - adv;
+  const vat   = afterAdv * 0.07;
+  const total = afterAdv + vat;
+  const ret   = gross * 0.05;
+  const net   = total - ret;
+  document.getElementById('ph-adv').value = adv.toFixed(2);
+  document.getElementById('ph-ret').value = ret.toFixed(2);
+  document.getElementById('ph-net').value = net.toFixed(2);
+  showToast('คำนวณสำเร็จ');
+}
+
+function fillFromCalc(){
+  const totEl = document.getElementById('pay-total-label');
+  const netEl = document.getElementById('pay-net');
+  const advEl = document.getElementById('pay-deduct-adv');
+  const retEl = document.getElementById('pay-foot-this'); // gross this period
+  if(!totEl||totEl.textContent==='0'){ showToast('กรุณาคำนวณงวดนี้ก่อน','red'); return; }
+  const gross = parseFloat(document.getElementById('pay-total-label').textContent.replace(/,/g,''))||0;
+  if(!gross){ showToast('ยังไม่มีผลคำนวณ','red'); return; }
+  // คำนวณตามสูตรสัญญา
+  const noVat = gross;  // pay-total-label คือ ก่อน VAT แล้ว
+  const adv   = noVat*0.075;
+  const afterAdv = noVat - adv;
+  const vat   = afterAdv*0.07;
+  const total = afterAdv+vat;
+  const ret   = total*0.05;
+  const net   = total-ret;
+  document.getElementById('ph-gross').value = total.toFixed(2);
+  document.getElementById('ph-adv').value   = adv.toFixed(2);
+  document.getElementById('ph-ret').value   = ret.toFixed(2);
+  document.getElementById('ph-net').value   = net.toFixed(2);
+  // ดึงช่วงวันที่ด้วย
+  const pf = document.getElementById('pay-from').value;
+  const pt = document.getElementById('pay-to').value;
+  if(pf) document.getElementById('ph-date-from').value = pf;
+  if(pt) document.getElementById('ph-date-to').value   = pt;
+  showToast('ดึงข้อมูลสำเร็จ');
+}
+
+function fillFromLastCert(){
+  if(!payHistory.length){ showToast('ยังไม่มีประวัติงวด','red'); return; }
+  const sorted = [...payHistory].sort((a,b)=>a.no-b.no);
+  const last = sorted[sorted.length-1];
+  document.getElementById('pay-from').value = last.dateFrom;
+  document.getElementById('pay-to').value   = last.dateTo;
+  calcPayment();
+}
+
+function savePayCert(){
+  const no    = parseInt(document.getElementById('ph-no').value)||0;
+  const type  = document.getElementById('ph-type').value;
+  const dateFrom = document.getElementById('ph-date-from').value;
+  const dateTo   = document.getElementById('ph-date-to').value;
+  const gross = parseFloat(document.getElementById('ph-gross').value)||0;
+  const adv   = parseFloat(document.getElementById('ph-adv').value)||0;
+  const ret   = parseFloat(document.getElementById('ph-ret').value)||0;
+  const net   = parseFloat(document.getElementById('ph-net').value)||0;
+  const note  = document.getElementById('ph-note').value.trim();
+
+  if(!no||!dateFrom||!dateTo||!gross){
+    showToast('กรุณากรอกข้อมูลให้ครบ (งวดที่/วันที่/มูลค่า)','red'); return;
+  }
+
+  if(phEditId){
+    const idx = payHistory.findIndex(x=>x.id===phEditId);
+    if(idx>=0) payHistory[idx]={...payHistory[idx],no,type,dateFrom,dateTo,gross,adv,ret,net,note};
+  } else {
+    payHistory.push({id:Date.now(),no,type,dateFrom,dateTo,gross,adv,ret,net,note});
+  }
+  savePayHistory();
+  renderPayTimeline();
+  closePayHistModal();
+  showToast(phEditId?'อัปเดตสำเร็จ':'บันทึกงวดสำเร็จ ✓');
+}
+
+function deletePayCert(){
+  if(!phEditId) return;
+  if(!confirm('ต้องการลบข้อมูลงวดนี้?')) return;
+  payHistory = payHistory.filter(x=>x.id!==phEditId);
+  savePayHistory();
+  renderPayTimeline();
+  closePayHistModal();
+  showToast('ลบสำเร็จ','red');
+}
+
+function saveAsPayCert(){
+  if(document.getElementById('pay-result').classList.contains('hidden')){
+    showToast('กรุณาคำนวณก่อน','red'); return;
+  }
+  openPayHistModal(null);
+  setTimeout(()=>fillFromCalc(), 100);
+}
+
+// ===================== PAYMENT =====================
+function fmtB(n){ return Math.round(n).toLocaleString('th-TH'); }
+function fmtD(ds){
+  const [y,m,d]=ds.split('-');
+  return parseInt(d)+'/'+parseInt(m)+'/'+(parseInt(y)+543-2500);
+}
+
+function setPayMonth(offset){
+  const d=new Date(); d.setMonth(d.getMonth()+offset);
+  const y=d.getFullYear(), m=d.getMonth();
+  const first=new Date(y,m,1), last=new Date(y,m+1,0);
+  const fmt=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  document.getElementById('pay-from').value=fmt(first);
+  document.getElementById('pay-to').value=fmt(last);
+}
+function setPayQuarter(){
+  const d=new Date(); const q=Math.floor(d.getMonth()/3);
+  const y=d.getFullYear();
+  const first=new Date(y,q*3,1), last=new Date(y,q*3+3,0);
+  const fmt=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+  document.getElementById('pay-from').value=fmt(first);
+  document.getElementById('pay-to').value=fmt(last);
+}
+function setPayAll(){
+  const dates=records.map(r=>r.date).filter(Boolean).sort();
+  if(!dates.length){showToast('ยังไม่มีข้อมูล','red');return;}
+  document.getElementById('pay-from').value=dates[0];
+  document.getElementById('pay-to').value=dates[dates.length-1];
+}
+
+function calcPayment(){
+  const fromVal=document.getElementById('pay-from').value;
+  const toVal  =document.getElementById('pay-to').value;
+  if(!fromVal||!toVal){showToast('กรุณาเลือกช่วงวันที่','red');return;}
+  if(fromVal>toVal){showToast('วันที่เริ่มต้นต้องไม่เกินวันสิ้นสุด','red');return;}
+
+  // กรอง records ในช่วงวันที่
+  const inRange = records.filter(r=>r.date>=fromVal && r.date<=toVal);
+  // records สะสมถึงงวดนี้ (ทุก record ≤ toVal)
+  const cumRecs  = records.filter(r=>r.date<=toVal);
+
+  const soilCO = r => {
+    if(!r.soil_depth) return 0;
+    if(r.top_casing!=null&&r.pile_cutoff!=null)
+      return Math.max(0,r.soil_depth-(r.top_casing-r.pile_cutoff));
+    return r.soil_depth||0;
+  };
+
+  // คำนวณปริมาณต่อ BOQ item
+  function getQty(boqItem, recs){
+    let q=0;
+    if(boqItem.depthType==='soil'){
+      recs.filter(r=>boqItem.itemIds.includes(r.item_id)).forEach(r=>{q+=soilCO(r);});
+    } else if(boqItem.depthType==='rock'){
+      recs.filter(r=>boqItem.itemIds.includes(r.item_id)).forEach(r=>{q+=r.rock_depth||0;});
+    } else if(boqItem.depthType==='ea'){
+      recs.filter(r=>boqItem.itemIds.includes(r.item_id)).forEach(r=>{q+=r.qty||0;});
+    } else if(boqItem.depthType==='sonicLM'){
+      recs.filter(r=>boqItem.itemIds.includes(r.item_id)).forEach(sonic=>{
+        const key=(sonic.pile_id&&sonic.pile_id!=='-')?sonic.pile_id:sonic.location;
+        const bp=records.find(r=>(r.category==='Bored Pile')&&(r.pile_id===key||r.location===key||(r.location&&r.location.startsWith(key))));
+        q+=bp?((bp.soil_depth||0)+(bp.rock_depth||0)):(sonic.qty||0);
+      });
+    }
+    return q;
+  }
+
+  const CONTRACT_TOTAL=640962676.45;
+  let thisTotal=0, cumTotal=0;
+  let rows='';
+
+  BOQ.forEach(b=>{
+    const thisQty = getQty(b, inRange);
+    const cumQty  = getQty(b, cumRecs);
+    const thisVal = Math.min(thisQty, b.contractQty)*b.rate;
+    const cumVal  = Math.min(cumQty,  b.contractQty)*b.rate;
+    const cumPct  = b.totalContract>0?(cumVal/b.totalContract*100):0;
+    const barColor= cumPct>=75?'#22c55e':cumPct>=40?'#f59e0b':'#3b82f6';
+
+    thisTotal+=thisVal; cumTotal+=cumVal;
+
+    if(thisVal===0&&cumVal===0) {
+      rows+=`<tr class="border-b border-gray-50 text-gray-300">
+        <td class="px-3 py-2">${b.label}</td>
+        <td class="px-3 py-2 text-center">${b.code}</td>
+        <td class="px-3 py-2 text-right">${b.unit}</td>
+        <td class="px-3 py-2 text-right">—</td>
+        <td class="px-3 py-2 text-right">${fmtB(b.rate)}</td>
+        <td class="px-3 py-2 text-right">—</td>
+        <td class="px-3 py-2 text-right">—</td>
+        <td class="px-3 py-2 text-right text-gray-400">${fmtB(b.totalContract)}</td>
+        <td class="px-3 py-2 text-center text-gray-400">0.0%</td>
+      </tr>`;
+      return;
+    }
+
+    rows+=`<tr class="border-b border-gray-100 hover:bg-blue-50">
+      <td class="px-3 py-2 text-gray-800 font-medium">${b.label}</td>
+      <td class="px-3 py-2 text-center text-gray-400">${b.code}</td>
+      <td class="px-3 py-2 text-right text-gray-500">${b.unit}</td>
+      <td class="px-3 py-2 text-right font-bold text-blue-700">${thisQty>0?thisQty.toFixed(2):'—'}</td>
+      <td class="px-3 py-2 text-right text-gray-500">${fmtB(b.rate)}</td>
+      <td class="px-3 py-2 text-right font-bold text-blue-700">${thisVal>0?fmtB(thisVal):'—'}</td>
+      <td class="px-3 py-2 text-right font-bold text-green-700">${fmtB(cumVal)}</td>
+      <td class="px-3 py-2 text-right text-gray-500">${fmtB(b.totalContract)}</td>
+      <td class="px-3 py-2">
+        <div class="flex items-center gap-1">
+          <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div style="width:${Math.min(cumPct,100)}%;background:${barColor}" class="h-full rounded-full"></div>
+          </div>
+          <span class="text-gray-600 font-semibold w-9 text-right">${cumPct.toFixed(1)}%</span>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  // KPI
+  const bpInRange = inRange.filter(r=>r.item_id==='bp-150'||r.item_id==='bp-120');
+  const testInRange = inRange.filter(r=>['lt-120','lt-150','dlt-120','dlt-150','slt-120','slt-150'].includes(r.item_id));
+  const totalLM = bpInRange.reduce((s,r)=>s+(r.soil_depth||0)+(r.rock_depth||0),0);
+
+  document.getElementById('pay-range-label').textContent = fmtD(fromVal)+' – '+fmtD(toVal);
+  document.getElementById('pay-total-label').textContent = fmtB(thisTotal);
+  // คำนวณหักเงิน
+  const adv   = thisTotal*0.075;
+  const afterAdv = thisTotal-adv;
+  const vat   = afterAdv*0.07;
+  const total = afterAdv+vat;
+  const ret   = total*0.05;
+  const net   = total-ret;
+  document.getElementById('pay-before-vat').textContent  = fmtB(thisTotal);
+  document.getElementById('pay-deduct-adv').textContent  = fmtB(adv);
+  document.getElementById('pay-vat').textContent         = fmtB(vat);
+  document.getElementById('pay-net').textContent         = fmtB(net);
+  document.getElementById('pay-kpi-bp').textContent      = bpInRange.length+' ต้น';
+  document.getElementById('pay-kpi-lm').textContent      = totalLM.toFixed(1)+' m.';
+  document.getElementById('pay-kpi-test').textContent    = testInRange.length+' รายการ';
+  document.getElementById('pay-tbody').innerHTML         = rows;
+  document.getElementById('pay-foot-this').textContent   = fmtB(thisTotal);
+  document.getElementById('pay-foot-cum').textContent    = fmtB(cumTotal);
+  document.getElementById('pay-foot-pct').textContent    = (cumTotal/CONTRACT_TOTAL*100).toFixed(2)+'%';
+
+  // Records list
+  const cumPct2 = (cumTotal/CONTRACT_TOTAL*100);
+  let recRows='';
+  let recCnt=0;
+  inRange.sort((a,b)=>a.date.localeCompare(b.date)).forEach(r=>{
+    const boqItem=BOQ.find(b=>b.itemIds.includes(r.item_id));
+    if(!boqItem)return;
+    let qty=0,val=0;
+    if(boqItem.depthType==='soil'){qty=soilCO(r);val=qty*boqItem.rate;}
+    else if(boqItem.depthType==='rock'){qty=r.rock_depth||0;val=qty*boqItem.rate;}
+    else if(boqItem.depthType==='ea'){qty=r.qty||0;val=qty*boqItem.rate;}
+    else if(boqItem.depthType==='sonicLM'){
+      const key=(r.pile_id&&r.pile_id!=='-')?r.pile_id:r.location;
+      const bp=records.find(x=>(x.category==='Bored Pile')&&(x.pile_id===key||x.location===key));
+      qty=bp?((bp.soil_depth||0)+(bp.rock_depth||0)):(r.qty||0);
+      val=qty*boqItem.rate;
+    }
+    recCnt++;
+    const isLM=boqItem.depthType==='soil'||boqItem.depthType==='rock'||boqItem.depthType==='sonicLM';
+    recRows+=`<tr class="border-b border-gray-50 hover:bg-gray-50">
+      <td class="px-3 py-2 text-gray-600">${fmtD(r.date)}</td>
+      <td class="px-3 py-2"><span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">${r.category}</span></td>
+      <td class="px-3 py-2 font-semibold text-blue-800">${r.pile_id||r.location||'-'}</td>
+      <td class="px-3 py-2 text-right text-blue-600">${boqItem.depthType==='soil'?qty.toFixed(2):(boqItem.depthType==='sonicLM'?qty.toFixed(2):'-')}</td>
+      <td class="px-3 py-2 text-right text-cyan-600">${boqItem.depthType==='rock'?qty.toFixed(2):'-'}</td>
+      <td class="px-3 py-2 text-right font-bold text-green-700">${fmtB(val)}</td>
+    </tr>`;
+  });
+  document.getElementById('pay-rec-tbody').innerHTML = recRows||'<tr><td colspan="6" class="text-center py-6 text-gray-400">ไม่มีรายการ</td></tr>';
+  document.getElementById('pay-rec-count').textContent = recCnt+' รายการ';
+  document.getElementById('pay-result').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function printPayment(){
+  const fromVal=document.getElementById('pay-from').value;
+  const toVal=document.getElementById('pay-to').value;
+  if(!fromVal||!toVal||document.getElementById('pay-result').classList.contains('hidden')){
+    showToast('กรุณาคำนวณก่อน','red'); return;
+  }
+  const thisTotal=document.getElementById('pay-foot-this').textContent;
+  const cumTotal=document.getElementById('pay-foot-cum').textContent;
+  const pct=document.getElementById('pay-foot-pct').textContent;
+  const tableHTML=document.querySelector('#pay-tbody').parentElement.parentElement.outerHTML;
+
+  const css='@page{size:A4;margin:15mm}'
+    +'body{font-family:Sarabun,Tahoma,sans-serif;font-size:10px;color:#1e293b;-webkit-print-color-adjust:exact}'
+    +'h2{text-align:center;font-size:14px;margin:0 0 2px}'
+    +'h3{text-align:center;font-size:11px;margin:0 0 8px;color:#475569}'
+    +'.kpi{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:8px 0 12px}'
+    +'.kpi-box{border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center}'
+    +'.kpi-label{font-size:9px;color:#64748b}'
+    +'.kpi-val{font-size:16px;font-weight:900}'
+    +'table{width:100%;border-collapse:collapse}'
+    +'th{background:#1e3a5f;color:#fff;padding:4px 6px;font-size:9px;text-align:center}'
+    +'td{padding:4px 6px;border:1px solid #e2e8f0;font-size:9px}'
+    +'.sign{margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;text-align:center;font-size:10px}'
+    +'.sign-line{border-top:1px solid #475569;padding-top:4px;margin-top:24px}';
+
+  const html='<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><style>'+css+'</style></head><body>'
+    +'<h2>โครงการก่อสร้างทางรถไฟทางคู่ ขอนแก่น - หนองคาย | ASNK/A/001 (P03)</h2>'
+    +'<h3>สรุปมูลค่างาน Payment ช่วงวันที่ '+fmtD(fromVal)+' – '+fmtD(toVal)+'</h3>'
+    +'<div class="kpi">'
+    +'<div class="kpi-box"><div class="kpi-label">มูลค่างวดนี้ (บาท)</div><div class="kpi-val" style="color:#2563eb">'+thisTotal+'</div></div>'
+    +'<div class="kpi-box"><div class="kpi-label">มูลค่าสะสม (บาท)</div><div class="kpi-val" style="color:#16a34a">'+cumTotal+'</div></div>'
+    +'<div class="kpi-box"><div class="kpi-label">% ของสัญญา</div><div class="kpi-val" style="color:#7c3aed">'+pct+'</div></div>'
+    +'</div>'
+    +tableHTML
+    +'<div class="sign">'
+    +'<div><div class="sign-line">ผู้จัดทำ / Prepared by</div></div>'
+    +'<div><div class="sign-line">ผู้ตรวจสอบ / Checked by</div></div>'
+    +'<div><div class="sign-line">วิศวกรโครงการ / Engineer</div></div>'
+    +'</div></body></html>';
+
+  const win=window.open('','_blank','width=800,height=700');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),700);
+}
+
+// ===================== EARNED VALUE =====================
+function calcEarnedValue(){
+  const fmt  = n => n.toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmt2 = n => n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  // คำนวณ soil_depth from cut-off
+  const soilCO = r => {
+    if(!r.soil_depth) return 0;
+    if(r.top_casing!=null && r.pile_cutoff!=null)
+      return Math.max(0, r.soil_depth - (r.top_casing - r.pile_cutoff));
+    return r.soil_depth || 0;
+  };
+
+  let totalEarned = 0;
+  const CONTRACT_TOTAL = 640962676.45;
+  let rows = '';
+
+  BOQ.forEach(b => {
+    let earnedQty = 0;
+
+    if(b.depthType === 'soil'){
+      // LM in soil = Σ soil_depth_CO ของ records ที่ item_id ตรง
+      records.filter(r => b.itemIds.includes(r.item_id))
+             .forEach(r => { earnedQty += soilCO(r); });
+    }
+    else if(b.depthType === 'rock'){
+      // LM in rock = Σ rock_depth
+      records.filter(r => b.itemIds.includes(r.item_id))
+             .forEach(r => { earnedQty += r.rock_depth || 0; });
+    }
+    else if(b.depthType === 'ea'){
+      // EA = นับ records
+      earnedQty = records.filter(r => b.itemIds.includes(r.item_id))
+                         .reduce((s,r) => s + (r.qty||0), 0);
+    }
+    else if(b.depthType === 'sonicLM'){
+      // Sonic LM = ความยาวเสาเข็มจริง (soil_depth + rock_depth) ของ BP ที่ตรง pile_id
+      const sonicRecs = records.filter(r => b.itemIds.includes(r.item_id));
+      sonicRecs.forEach(sonic => {
+        // key สำหรับ match — ใช้ pile_id ก่อน ถ้าไม่มีใช้ location
+        const key = (sonic.pile_id && sonic.pile_id!=='-') ? sonic.pile_id : sonic.location;
+        if(!key || key==='-') { earnedQty += sonic.qty||0; return; }
+
+        // หา BP record ที่ตรง pile_id หรือ location
+        const bpRec = records.find(r =>
+          (r.category==='Bored Pile' || r.item_id==='bp-150' || r.item_id==='bp-120') &&
+          (r.pile_id===key || r.location===key || (r.location&&r.location.startsWith(key)))
+        );
+
+        if(bpRec){
+          earnedQty += (bpRec.soil_depth||0) + (bpRec.rock_depth||0);
+        } else if(sonic.soil_depth||sonic.rock_depth){
+          earnedQty += (sonic.soil_depth||0) + (sonic.rock_depth||0);
+        } else {
+          earnedQty += sonic.qty||0;
+        }
+      });
+    }
+
+    // คำนวณมูลค่า
+    const earnedQtyCapped = Math.min(earnedQty, b.contractQty); // ไม่เกินสัญญา
+    const earnedVal = earnedQtyCapped * b.rate;
+    const pct = b.contractQty > 0 ? (earnedQty / b.contractQty * 100) : 0;
+    const pctCapped = Math.min(pct, 100);
+    const barColor = pctCapped >= 75 ? '#22c55e' : pctCapped >= 40 ? '#f59e0b' : '#3b82f6';
+
+    totalEarned += earnedVal;
+
+    rows += `<tr class="border-b border-gray-50 hover:bg-gray-50">
+      <td class="px-3 py-2 text-gray-700">${b.label}</td>
+      <td class="px-3 py-2 text-center text-gray-400">${b.code}</td>
+      <td class="px-3 py-2 text-right text-gray-500">${b.unit}</td>
+      <td class="px-3 py-2 text-right text-gray-600">${fmt2(b.contractQty)}</td>
+      <td class="px-3 py-2 text-right font-semibold text-blue-700">${fmt2(earnedQty)}</td>
+      <td class="px-3 py-2 text-right text-gray-500">${fmt(b.rate)}</td>
+      <td class="px-3 py-2 text-right text-gray-600">${fmt(b.totalContract)}</td>
+      <td class="px-3 py-2 text-right font-bold text-green-700">${fmt(earnedVal)}</td>
+      <td class="px-3 py-2">
+        <div class="flex items-center gap-1">
+          <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div style="width:${pctCapped}%;background:${barColor}" class="h-full rounded-full transition-all"></div>
+          </div>
+          <span class="text-gray-600 font-semibold w-9 text-right">${pct.toFixed(1)}%</span>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  const totalPct = CONTRACT_TOTAL > 0 ? (totalEarned / CONTRACT_TOTAL * 100) : 0;
+
+  // อัปเดต KPI
+  document.getElementById('ev-earned').textContent = fmt(totalEarned);
+  document.getElementById('ev-pct').textContent    = totalPct.toFixed(2) + '%';
+  document.getElementById('ev-prog').style.width   = Math.min(totalPct,100) + '%';
+  document.getElementById('ev-tbody').innerHTML    = rows;
+  document.getElementById('ev-foot-earned').textContent = fmt(totalEarned);
+  document.getElementById('ev-foot-pct').textContent    = totalPct.toFixed(2) + '%';
+
+  // Debug: แสดง sonic records ใน console
+  const sonicRecs = records.filter(r => r.item_id==='slt-150'||r.item_id==='slt-120');
+  if(sonicRecs.length){
+    console.log('[EV Debug] Sonic records:', sonicRecs.map(r=>({
+      pile_id: r.pile_id, location: r.location, qty: r.qty,
+      soil_depth: r.soil_depth, rock_depth: r.rock_depth
+    })));
+    sonicRecs.forEach(s=>{
+      const key=(s.pile_id&&s.pile_id!=='-')?s.pile_id:s.location;
+      const bp=records.find(r=>(r.category==='Bored Pile')&&(r.pile_id===key||r.location===key||(r.location&&r.location.startsWith(key))));
+      console.log('[EV Debug] key='+key+' → BP:'+(bp?'YES depth='+(bp.soil_depth+bp.rock_depth):'NO'));
+    });
+  }
+}
 
 // ===================== DASHBOARD =====================
 function updateDashboard(){
@@ -770,6 +1679,7 @@ function updateDashboard(){
   document.getElementById('last-update').textContent=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
 
   renderSummaryTable();
+  calcEarnedValue();
 }
 
 function renderSummaryTable(){
@@ -836,6 +1746,8 @@ function onCatChange(){
     document.getElementById('bp-fields').classList.toggle('hidden', isAnchorSel);
     document.getElementById('anc-fields').classList.toggle('hidden', !isAnchorSel);
   }
+  // อัปเดต location input mode ตามหมวดงาน
+  updateLocationInputMode(cat, document.getElementById('r-item').value||'');
 }
 
 function onItemChange(){
@@ -846,6 +1758,65 @@ function onItemChange(){
   if(['Bored Pile','Static Pile Load Test'].includes(cat2)){
     document.getElementById('bp-fields').classList.toggle('hidden', isAnc);
     document.getElementById('anc-fields').classList.toggle('hidden', !isAnc);
+  }
+  updateLocationInputMode(cat2, opt?.value||'');
+}
+
+function updateLocationInputMode(cat, itemId){
+  const locText   = document.getElementById('r-loc');
+  const locSelect = document.getElementById('r-loc-select');
+  const locHint   = document.getElementById('r-loc-hint');
+
+  const isSonic   = cat === 'Sonic Logging Test';
+  const isDynamic = cat === 'Dynamic Pile Load Test';
+  const useDropdown = isSonic || isDynamic;
+
+  if(useDropdown){
+    // กำหนดประเภทที่ต้องการ
+    const testType = isSonic ? 'sonic' : 'dynamic';
+
+    // สร้าง options จาก PILE_TEST_MAP
+    const alreadyDone = new Set(
+      records.filter(r=>r.item_id===itemId).map(r=>r.pile_id||r.location)
+    );
+    const allPiles = Object.entries(PILE_TEST_MAP)
+      .filter(([,v])=>v===testType)
+      .map(([k])=>k)
+      .sort();
+
+    let opts = '<option value="">— เลือก Pile ID —</option>';
+    // แยกกลุ่ม: ยังไม่ทำ / ทำแล้ว
+    const todo = allPiles.filter(p=>!alreadyDone.has(p));
+    const done = allPiles.filter(p=>alreadyDone.has(p));
+
+    if(todo.length){
+      opts += '<optgroup label="ยังไม่ทดสอบ ('+todo.length+' รายการ)">';
+      todo.forEach(p=>{ opts+=`<option value="${p}">${p}</option>`; });
+      opts += '</optgroup>';
+    }
+    if(done.length){
+      opts += '<optgroup label="✓ ทดสอบแล้ว ('+done.length+' รายการ)">';
+      done.forEach(p=>{ opts+=`<option value="${p}" style="color:#94a3b8">${p} ✓</option>`; });
+      opts += '</optgroup>';
+    }
+
+    locSelect.innerHTML = opts;
+    // sync ค่าจาก text → select ถ้ามี
+    if(locText.value && allPiles.includes(locText.value)){
+      locSelect.value = locText.value;
+    }
+    locSelect.onchange = ()=>{ locText.value = locSelect.value; };
+
+    locText.classList.add('hidden');
+    locSelect.classList.remove('hidden');
+    locHint.textContent = isSonic
+      ? `Sonic: ${todo.length} รายการที่ยังไม่ทดสอบ จาก ${allPiles.length} รายการทั้งหมด`
+      : `Dynamic: ${todo.length} รายการที่ยังไม่ทดสอบ`;
+    locHint.classList.remove('hidden');
+  } else {
+    locText.classList.remove('hidden');
+    locSelect.classList.add('hidden');
+    locHint.classList.add('hidden');
   }
 }
 
@@ -934,7 +1905,12 @@ function submitRecord(){
   const user=document.getElementById('r-user').value.trim();
   const cat=document.getElementById('r-cat').value;
   const itemId=document.getElementById('r-item').value;
-  const loc=document.getElementById('r-loc').value.trim();
+  // รับค่า location จาก dropdown (Sonic/Dynamic) หรือ text input (อื่นๆ)
+  const isDropdownCat = cat==='Sonic Logging Test'||cat==='Dynamic Pile Load Test';
+  const locSelect = document.getElementById('r-loc-select');
+  const loc = isDropdownCat
+    ? (locSelect.value||document.getElementById('r-loc').value||'').trim()
+    : document.getElementById('r-loc').value.trim();
   const qty=parseInt(document.getElementById('r-qty').value)||0;
   const concrete=parseFloat(document.getElementById('r-concrete').value)||0;
   const pin=document.getElementById('r-pin').value;
@@ -943,7 +1919,11 @@ function submitRecord(){
   if(pin!==PIN_RECORD){showToast('รหัส PIN ไม่ถูกต้อง','red');document.getElementById('r-pin').value='';return;}
 
   const inv=INVENTORY.find(i=>i.id===itemId);
-  const pileId=document.getElementById('r-pile-id').value||null;
+  // สำหรับ Sonic/Dynamic — pile_id = ค่าที่เลือกจาก dropdown (loc)
+  const isTestCat = cat==='Sonic Logging Test'||cat==='Dynamic Pile Load Test';
+  const pileId = isTestCat
+    ? (loc||null)
+    : (document.getElementById('r-pile-id').value||null);
 
   const rec={
     id:Date.now().toString(),
@@ -980,6 +1960,10 @@ function submitRecord(){
   document.getElementById('r-item').innerHTML='<option value="">-- เลือกหมวดงานก่อน --</option>';
   document.getElementById('r-item').disabled=true;
   document.getElementById('r-loc').value='';
+  document.getElementById('r-loc-select').innerHTML='<option value="">— เลือก Pile ID —</option>';
+  document.getElementById('r-loc-select').classList.add('hidden');
+  document.getElementById('r-loc').classList.remove('hidden');
+  document.getElementById('r-loc-hint').classList.add('hidden');
   document.getElementById('r-qty').value='1';
   document.getElementById('r-concrete').value='';
   document.getElementById('r-soil').value='';
