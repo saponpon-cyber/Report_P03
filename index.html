@@ -93,6 +93,20 @@ th{position:sticky;top:0;z-index:2}
     </div>
   </div>
 
+  <!-- Zone Overview SVG Dashboard -->
+  <div id="zone-overview-panel" class="mb-5 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 text-slate-600"></i>
+      <h2 class="font-bold text-gray-800">ภาพรวมโครงการ P03</h2>
+      <span class="text-xs text-gray-400 ml-1">ขอนแก่น – หนองคาย</span>
+    </div>
+    <div class="overflow-x-auto">
+      <div id="zone-overview-svg" class="p-2"></div>
+    </div>
+    <!-- hidden cards container kept for compat -->
+    <div id="zone-cards-container" class="hidden"></div>
+  </div>
+
   <!-- Earned Value Panel -->
   <div class="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden mb-5">
     <div class="px-4 sm:px-6 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -549,18 +563,58 @@ th{position:sticky;top:0;z-index:2}
       <i data-lucide="map" class="w-4 h-4 text-blue-600"></i>
       <span class="font-bold text-gray-800 text-sm">Plan View</span>
     </div>
-    <div class="flex items-center gap-1.5 ml-2">
+    <!-- Zone quick-select buttons -->
+    <div class="flex items-center gap-1 ml-1">
+      <span class="text-xs font-semibold text-gray-400 mr-0.5">Zone:</span>
+      <button onclick="pvGoZone('A')" class="pv-zone-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#dcfce7;color:#166534;border-color:#86efac">A</button>
+      <button onclick="pvGoZone('B')" class="pv-zone-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc">B</button>
+      <button onclick="pvGoZone('C')" class="pv-zone-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#fef3c7;color:#b45309;border-color:#fde68a">C</button>
+      <button onclick="pvGoZone('D')" class="pv-zone-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#ede9fe;color:#5b21b6;border-color:#c4b5fd">D</button>
+      <button onclick="pvGoZone('E')" class="pv-zone-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5">E</button>
+      <button onclick="pvGoZone('ALL')" class="pv-zone-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#f1f5f9;color:#475569;border-color:#cbd5e1">All</button>
+    </div>
+    <div class="flex items-center gap-1.5 ml-1">
       <label class="text-xs font-semibold text-gray-500">ช่วง STA.</label>
-      <select id="pv-from" onchange="renderPlanView()" class="text-xs px-2 py-1 border border-gray-300 rounded-lg">
+      <select id="pv-from" onchange="pvZoneClear();renderPlanView()" class="text-xs px-2 py-1 border border-gray-300 rounded-lg">
       </select>
       <span class="text-xs text-gray-400">—</span>
-      <select id="pv-to" onchange="renderPlanView()" class="text-xs px-2 py-1 border border-gray-300 rounded-lg">
+      <select id="pv-to" onchange="pvZoneClear();renderPlanView()" class="text-xs px-2 py-1 border border-gray-300 rounded-lg">
       </select>
     </div>
-    <!-- Scale fixed label (hidden slider) -->
+    <!-- Scale: Fit / Fixed toggle -->
     <div class="flex items-center gap-1 ml-1">
-      <input type="range" id="pv-scale" min="1" max="8" step="0.5" value="5.5" class="hidden">
-      <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Scale 5.5×</span>
+      <input type="range" id="pv-scale" min="1" max="8" step="0.5" value="1.75" class="hidden">
+      <button id="pv-fit-btn" onclick="pvToggleFit()"
+        class="text-xs px-2.5 py-0.5 rounded-md font-bold border transition"
+        style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1">
+        🔍 Fit Screen
+      </button>
+      <span id="pv-scale-label" class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">1.75×</span>
+    </div>
+    <!-- Toggle data panels -->
+    <div class="flex items-center gap-1 ml-2">
+      <span class="text-xs font-semibold text-gray-400">ข้อมูล:</span>
+      <button id="toggle-bp" onclick="pvTogglePanel('bp')"
+        class="pv-panel-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1">
+        🔩 Bored Pile
+      </button>
+      <button id="toggle-ft" onclick="pvTogglePanel('ft')"
+        class="pv-panel-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1">
+        🟩 Footing
+      </button>
+      <button id="toggle-col" onclick="pvTogglePanel('col')"
+        class="pv-panel-btn text-xs px-2 py-0.5 rounded-md font-bold border transition"
+        style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1">
+        🔵 Column
+      </button>
     </div>
     <!-- Legend -->
     <div class="flex items-center gap-2 ml-auto text-xs flex-wrap">
@@ -577,9 +631,12 @@ th{position:sticky;top:0;z-index:2}
     <div id="pv-canvas" class="relative select-none" style="min-width:800px">
       <!-- SVG rendered here by JS -->
     </div>
-    <!-- Detail table strip -->
-    <div id="pv-detail-strip" class="bg-white border-t-2 border-slate-300" style="min-width:800px">
-    </div>
+    <!-- Detail table strips (hidden by default) -->
+    <div id="pv-strip-bp"  class="hidden bg-white border-t-2 border-green-300"  style="min-width:800px"></div>
+    <div id="pv-strip-ft"  class="hidden bg-white border-t-2 border-emerald-300" style="min-width:800px"></div>
+    <div id="pv-strip-col" class="hidden bg-white border-t-2 border-blue-300"   style="min-width:800px"></div>
+    <!-- legacy strip kept for compat -->
+    <div id="pv-detail-strip" class="hidden" style="min-width:800px"></div>
   </div>
   <!-- Tooltip -->
   <div id="pv-tooltip" class="hidden fixed z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-xs" style="max-width:min(280px,90vw);position:fixed"></div>
@@ -654,6 +711,9 @@ th{position:sticky;top:0;z-index:2}
         </button>
         <button onclick="printPayment()" class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl text-sm transition shadow-sm">
           <i data-lucide="printer" class="w-4 h-4"></i>Print
+        </button>
+        <button onclick="exportInvoice()" class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition shadow-sm">
+          <i data-lucide="file-text" class="w-4 h-4"></i>ใบแจ้งหนี้
         </button>
       </div>
     </div>
@@ -1358,13 +1418,14 @@ function closePayHistModal(){
 function autoCalcPay(){
   const gross = parseFloat(document.getElementById('ph-gross').value)||0;
   if(!gross){ showToast('กรุณากรอกมูลค่ารวม VAT ก่อน','red'); return; }
-  const noVat = gross * 100/107;
-  const adv   = noVat * 0.075;
-  const afterAdv = noVat - adv;
-  const vat   = afterAdv * 0.07;
-  const total = afterAdv + vat;
-  const ret   = gross * 0.05;
-  const net   = total - ret;
+  // gross = มูลค่ารวม VAT แล้ว
+  const beforeVat = gross * 100 / 107;
+  const adv       = beforeVat * 0.075;
+  const afterAdv  = beforeVat - adv;
+  const vat       = afterAdv * 0.07;
+  const afterVat  = afterAdv + vat;
+  const ret       = afterVat * 0.05;
+  const net       = afterVat - ret;
   document.getElementById('ph-adv').value = adv.toFixed(2);
   document.getElementById('ph-ret').value = ret.toFixed(2);
   document.getElementById('ph-net').value = net.toFixed(2);
@@ -1373,21 +1434,19 @@ function autoCalcPay(){
 
 function fillFromCalc(){
   const totEl = document.getElementById('pay-total-label');
-  const netEl = document.getElementById('pay-net');
-  const advEl = document.getElementById('pay-deduct-adv');
-  const retEl = document.getElementById('pay-foot-this'); // gross this period
   if(!totEl||totEl.textContent==='0'){ showToast('กรุณาคำนวณงวดนี้ก่อน','red'); return; }
-  const gross = parseFloat(document.getElementById('pay-total-label').textContent.replace(/,/g,''))||0;
+  // pay-total-label แสดง "มูลค่ารวม VAT" (qty × rate ซึ่งรวม VAT แล้ว)
+  const gross = parseFloat(totEl.textContent.replace(/,/g,''))||0;
   if(!gross){ showToast('ยังไม่มีผลคำนวณ','red'); return; }
-  // คำนวณตามสูตรสัญญา
-  const noVat = gross;  // pay-total-label คือ ก่อน VAT แล้ว
-  const adv   = noVat*0.075;
-  const afterAdv = noVat - adv;
-  const vat   = afterAdv*0.07;
-  const total = afterAdv+vat;
-  const ret   = total*0.05;
-  const net   = total-ret;
-  document.getElementById('ph-gross').value = total.toFixed(2);
+  // คำนวณตามสูตรสัญญา (ราคา BOQ รวม VAT แล้ว)
+  const beforeVat = gross * 100 / 107;  // ถอด VAT
+  const adv       = beforeVat * 0.075;  // หักล่วงหน้า 7.5%
+  const afterAdv  = beforeVat - adv;
+  const vat       = afterAdv * 0.07;    // บวก VAT กลับ
+  const afterVat  = afterAdv + vat;
+  const ret       = afterVat * 0.05;    // หักประกัน 5%
+  const net       = afterVat - ret;
+  document.getElementById('ph-gross').value = gross.toFixed(2);
   document.getElementById('ph-adv').value   = adv.toFixed(2);
   document.getElementById('ph-ret').value   = ret.toFixed(2);
   document.getElementById('ph-net').value   = net.toFixed(2);
@@ -1576,17 +1635,23 @@ function calcPayment(){
 
   document.getElementById('pay-range-label').textContent = fmtD(fromVal)+' – '+fmtD(toVal);
   document.getElementById('pay-total-label').textContent = fmtB(thisTotal);
-  // คำนวณหักเงิน
-  const adv   = thisTotal*0.075;
-  const afterAdv = thisTotal-adv;
-  const vat   = afterAdv*0.07;
-  const total = afterAdv+vat;
-  const ret   = total*0.05;
-  const net   = total-ret;
-  document.getElementById('pay-before-vat').textContent  = fmtB(thisTotal);
-  document.getElementById('pay-deduct-adv').textContent  = fmtB(adv);
-  document.getElementById('pay-vat').textContent         = fmtB(vat);
-  document.getElementById('pay-net').textContent         = fmtB(net);
+
+  // ═══ สูตรตามใบแจ้งหนี้จริง ═══
+  const v1 = thisTotal;           // ข้อ 1: รวม VAT
+  const v2 = v1 / 1.07;          // ข้อ 2: ไม่รวม VAT
+  const v3 = v2 * 0.075;         // ข้อ 3: หักล่วงหน้า 7.5%
+  const v4 = v2 - v3;            // ข้อ 4: คงเหลือ [2-3]
+  const v5 = v4 * 0.07;          // ข้อ 5: VAT 7%
+  const v6 = v4 + v5;            // ข้อ 6: รวม [4+5]
+  const v7 = v1 * 0.05;          // ข้อ 7: ประกันผลงาน 5% ของข้อ 1
+  const v8 = v6 - v7;            // ข้อ 8: คงเหลือ [6-7]
+
+  document.getElementById('pay-before-vat').textContent  = fmtB(v2);
+  document.getElementById('pay-deduct-adv').textContent  = fmtB(v3);
+  document.getElementById('pay-vat').textContent         = fmtB(v5);
+  document.getElementById('pay-net').textContent         = fmtB(v8);
+  // เก็บไว้สำหรับ Export ใบแจ้งหนี้
+  window._payCalc = {v1,v2,v3,v4,v5,v6,v7,v8,fromVal,toVal,thisTotal};
   document.getElementById('pay-kpi-bp').textContent      = bpInRange.length+' ต้น';
   document.getElementById('pay-kpi-lm').textContent      = totalLM.toFixed(1)+' m.';
   document.getElementById('pay-kpi-test').textContent    = testInRange.length+' รายการ';
@@ -1629,13 +1694,148 @@ function calcPayment(){
   lucide.createIcons();
 }
 
+function exportInvoice(){
+  if(!window._payCalc){ showToast('กรุณาคำนวณก่อน','red'); return; }
+  const c = window._payCalc;
+  const fmtTH = n => n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const sorted = [...payHistory].sort((a,b)=>a.no-b.no);
+  const certNo = sorted.length ? sorted[sorted.length-1].no : (payHistory.length+1);
+
+  const toThaiDate = ds => {
+    if(!ds) return '—';
+    const [y,m,d] = ds.split('-');
+    const months=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    return parseInt(d)+' '+months[parseInt(m)-1]+' '+( parseInt(y)+543);
+  };
+  const today = new Date();
+  const todayTH = toThaiDate(today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0'));
+
+  const rows = [
+    {no:'1.', label:'ค่าจ้างงานงวดที่ '+certNo+' (รวมภาษีมูลค่าเพิ่ม 7%)',                          val:c.v1, bold:false},
+    {no:'2.', label:'ค่าจ้างงานงวดที่ '+certNo+' (ไม่รวมภาษีมูลค่าเพิ่ม 7%)',                       val:c.v2, bold:false},
+    {no:'3.', label:'หักทึก เงินล่วงหน้า 7.5% [7.5% ของ (ข้อ 2)]',                                   val:c.v3, bold:false},
+    {no:'4.', label:'คงเหลือค่างาน [ข้อ 2 - ข้อ 3]',                                                 val:c.v4, bold:false},
+    {no:'5.', label:'ภาษีมูลค่าเพิ่ม 7% [7% ของ (ข้อ 4)]',                                           val:c.v5, bold:false},
+    {no:'6.', label:'รวมเป็นเงิน [(ข้อ 4) + (ข้อ 5)]',                                               val:c.v6, bold:false},
+    {no:'7.', label:'หักเงินค่าประกันผลงาน [5% ของ (ข้อ 1)]',                                        val:c.v7, bold:false},
+    {no:'8.', label:'คงเหลือค่าจ้างงานในงวดนี้เป็นเงินจำนวนสุทธิ [(ข้อ 6) - (ข้อ 7)]',              val:c.v8, bold:true },
+  ].map(r =>
+    '<tr style="'+(r.bold?'font-weight:bold;background:#f5f5f5;border-top:2px solid #000;':'')+'">'+
+    '<td style="padding:9px 14px;border:1px solid #888;width:75%;font-size:14px">'+r.no+' '+r.label+'</td>'+
+    '<td style="padding:9px 14px;border:1px solid #888;text-align:right;white-space:nowrap;font-size:14px">'+
+      fmtTH(r.val)+' บาท</td></tr>'
+  ).join('');
+
+  const doc = `<!DOCTYPE html>
+<html lang="th"><head><meta charset="UTF-8"><title>ใบแจ้งหนี้ งวดที่ ${certNo}</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 210mm; height: 297mm; }
+  body {
+    font-family: 'Sarabun','TH SarabunPSK','Tahoma',sans-serif;
+    font-size: 14px; color: #000;
+    display: flex; flex-direction: column;
+    padding: 14mm 16mm 12mm 16mm;
+    height: 297mm;
+  }
+  /* ─── HEADER ─── */
+  .hd-title  { text-align:center; font-size:24px; font-weight:bold; margin-bottom:4px; }
+  .hd-sub    { text-align:center; font-size:16px; margin-bottom:3px; }
+  .hd-doc    { text-align:center; font-size:20px; font-weight:bold;
+               margin-bottom:10px; letter-spacing:1px; }
+  /* ─── REF ─── */
+  .ref-row   { display:flex; justify-content:flex-end; margin-bottom:10px; font-size:13px; line-height:1.7; }
+  /* ─── INFO TABLE ─── */
+  .info-tbl  { width:100%; border-collapse:collapse; margin-bottom:12px; font-size:14px; }
+  .info-tbl td { padding:3px 4px; vertical-align:top; line-height:1.6; }
+  .info-tbl td:first-child { width:44%; white-space:nowrap; font-weight:600; }
+  /* ─── PERIOD BOX ─── */
+  .period    { text-align:center; border:1.5px solid #000; padding:9px 12px;
+               font-size:14px; font-weight:bold; margin-bottom:12px; }
+  /* ─── AMOUNT TABLE ─── */
+  .amt-tbl   { width:100%; border-collapse:collapse; margin-bottom:14px; }
+  .amt-tbl th{ background:#222; color:#fff; padding:9px 14px;
+               font-size:14px; border:1px solid #000; }
+  .amt-tbl td{ border:1px solid #888; }
+  /* ─── WORDS ─── */
+  .words     { text-align:center; font-size:13px; margin-bottom:auto; padding:6px 0; }
+  /* ─── SIGN ─── */
+  .sign-wrap { display:flex; justify-content:center; margin-top:20px; }
+  .sign-box  { text-align:center; min-width:240px; }
+  .sign-dots { border-top:1px solid #000; padding-top:6px;
+               font-size:14px; margin-top:40px; }
+  .sign-name { font-size:14px; margin-top:2px; }
+  .sign-role { font-size:13px; color:#333; }
+  .sign-date { text-align:center; font-size:13px; margin-top:10px; }
+</style>
+</head><body>
+
+<div class="hd-title">บริษัท ประยูรวิศว์ จำกัด</div>
+<div class="hd-sub">โครงการก่อสร้างรถไฟทางคู่ ช่วงขอนแก่น - หนองคาย</div>
+<div class="hd-doc">ใบแจ้งหนี้</div>
+
+<div class="ref-row">
+  <div>
+    เลขที่ &nbsp;: &nbsp;………………………………………<br>
+    วันที่ &nbsp;&nbsp;: &nbsp;${todayTH}
+  </div>
+</div>
+
+<table class="info-tbl">
+  <tr><td>โครงการ</td><td>: &nbsp;ก่อสร้างรถไฟทางคู่ ช่วงขอนแก่น - หนองคาย</td></tr>
+  <tr><td>สัญญาจ้าง เลขที่</td><td>: &nbsp;ASNK/A/001 ลว. 8 พฤษภาคม 2568</td></tr>
+  <tr><td>ผู้ว่าจ้าง</td><td>: &nbsp;บริษัท ช.ทวี แอสโซซิเอท เอนยิเนียริ่ง (1964) จำกัด</td></tr>
+  <tr><td>ผู้รับจ้าง</td><td>: &nbsp;บริษัท ประยูรวิศว์ จำกัด</td></tr>
+  <tr><td>ค่าจ้าง ตามสัญญาจ้าง</td><td>: &nbsp;2,094,500,000.00 &nbsp; บาท &nbsp;(รวมภาษีมูลค่าเพิ่ม)</td></tr>
+  <tr><td>ระยะเวลาก่อสร้าง</td><td>: &nbsp;720 วัน</td></tr>
+  <tr><td>เลขประจำตัวผู้เสียภาษี</td><td>: &nbsp;0105507001374 (สำนักงานใหญ่)</td></tr>
+</table>
+
+<div class="period">
+  ใบแจ้งหนี้ : เบิกเงินค่าจ้างงานงวดที่ ${certNo}
+  (วันที่ ${toThaiDate(c.fromVal)} ถึงวันที่ ${toThaiDate(c.toVal)})
+</div>
+
+<table class="amt-tbl">
+  <thead>
+    <tr>
+      <th style="width:74%;text-align:left">รายการ / Description</th>
+      <th style="width:26%;text-align:center">จำนวนเงิน / Amount</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+
+<div class="words">
+  เป็นจำนวนเงินสุทธิ &nbsp; ท่านสามารถโอนหรือสั่งจ่ายเช็คในนามผู้รับชำระเงิน บริษัท ประยูรวิศว์ จำกัด
+</div>
+
+<div class="sign-wrap">
+  <div class="sign-box">
+    <div class="sign-dots">
+      <div class="sign-name">(นายชัยอนันต์ ศรทอง)</div>
+      <div class="sign-role">ผู้จัดการโครงการฯ</div>
+      <div class="sign-role">บริษัท ประยูรวิศว์ จำกัด</div>
+    </div>
+    <div class="sign-date">วันที่ ………………………………………</div>
+  </div>
+</div>
+
+</body></html>`;
+
+  const win = window.open('','_blank','width=820,height=1060');
+  win.document.write(doc);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(), 800);
+}
+
+
 function printPayment(){
   const fromVal=document.getElementById('pay-from').value;
-  const toVal=document.getElementById('pay-to').value;
-  if(!fromVal||!toVal||document.getElementById('pay-result').classList.contains('hidden')){
-    showToast('กรุณาคำนวณก่อน','red'); return;
-  }
-  const thisTotal=document.getElementById('pay-foot-this').textContent;
   const cumTotal=document.getElementById('pay-foot-cum').textContent;
   const pct=document.getElementById('pay-foot-pct').textContent;
   const tableHTML=document.querySelector('#pay-tbody').parentElement.parentElement.outerHTML;
@@ -1701,9 +1901,14 @@ function calcEV4201(){
         if(it.filter){
           // Footing/Column: นับ AXIS ที่ footing/column type ตรง + บันทึกแล้ว
           const isFooting = it.id.startsWith('ft-');
+          // รวม pile_id และ location เพื่อ match กับ AXIS key
           const doneLocations = records
             .filter(r => it.itemIds.includes(r.item_id))
-            .map(r => r.pile_id || r.location || '');
+            .map(r => {
+              const pid = (r.pile_id && r.pile_id !== '-') ? r.pile_id : '';
+              const loc = r.location || '';
+              return [pid, loc].filter(Boolean);
+            }).flat();
           earnedQty = Object.entries(AXIS_PLAN).filter(([axKey, ax]) => {
             const t = isFooting ? (ax.footing||'') : (ax.column||ax.footing||'');
             const typeMatch =
@@ -1712,7 +1917,11 @@ function calcEV4201(){
               it.filter==='VP2A' ? (t==='VP2A') :
               it.filter==='VP2B' ? (t==='VP2B') :
               it.filter==='F6'   ? (t==='F6/C4'||t==='F1'||t.includes('F6')) : false;
-            return typeMatch && doneLocations.some(d => d && d.includes(axKey));
+            // match ถ้า location/pile_id มี axKey อยู่ในนั้น หรือ axKey == location ตรงๆ
+            const locMatch = doneLocations.some(d =>
+              d && (d === axKey || d.startsWith(axKey) || axKey.startsWith(d.split(' ')[0]))
+            );
+            return typeMatch && locMatch;
           }).length;
         } else {
           earnedQty = recs.reduce((s,r) => s + (r.qty||0), 0);
@@ -1897,9 +2106,215 @@ function updateDashboard(){
   renderSummaryTable();
   calcEarnedValue();
   calcEV4201();
+  renderZoneCards();
+  renderProjectOverviewDash();
 }
 
-function renderSummaryTable(){
+// ── Zone Cards for Dashboard ──────────────────────────────────────────────────
+// ─── Zone Overview Dashboard SVG ───────────────────────────────────────────
+function renderProjectOverviewDash() {
+  const el = document.getElementById('zone-overview-svg');
+  if (!el) return;
+  const W = Math.max(el.parentElement?.offsetWidth - 16 || 860, 600);
+  const PAD = 16;
+  const ZONE_W = Math.floor((W - PAD*2 - 12*4) / 5);
+  const ZONE_H = 330;
+  const SVG_H  = ZONE_H + 72;
+
+  const ZONE_DEF = [
+    {id:'A',label:'Zone A',range:'P03-165–189',color:'#16a34a',bg:'#f0fdf4',border:'#86efac',extra:[],
+     keys:k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=165&&+RegExp.$1<=189},
+    {id:'B',label:'Zone B',range:'P03-130–164',color:'#0284c7',bg:'#e0f2fe',border:'#7dd3fc',extra:[],
+     keys:k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=130&&+RegExp.$1<=164},
+    {id:'C',label:'Zone C',range:'P03-67–129', color:'#ca8a04',bg:'#fefce8',border:'#fde047',
+     extra:[{label:'Cross Beam',total:3,ids:['col-002','col-003']}],
+     keys:k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=67&&+RegExp.$1<=129},
+    {id:'D',label:'Zone D',range:'ST-P-01–18', color:'#7c3aed',bg:'#faf5ff',border:'#c4b5fd',
+     extra:[{label:'Portal Frame',total:18,ids:['col-004','col-005']}],
+     keys:k=>k.startsWith('ST-P-')},
+    {id:'E',label:'Zone E',range:'P03-40–65',  color:'#dc2626',bg:'#fee2e2',border:'#fca5a5',extra:[],
+     keys:k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=40&&+RegExp.$1<=65},
+  ];
+
+  const donePiles = new Set(records.filter(r=>r.category==='Bored Pile').map(r=>r.pile_id).filter(Boolean));
+  const ftRecs    = records.filter(r=>r.item_id&&r.item_id.startsWith('ft-'));
+  const colRecs   = records.filter(r=>r.item_id&&r.item_id.startsWith('col-'));
+  let totBpD=0,totBpT=0,totFtD=0,totFtT=0,totCpD=0,totCpT=0;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${SVG_H}" style="font-family:sans-serif;display:block">`;
+
+  const drawBar=(x,y,done,total,color)=>{
+    const BW=ZONE_W-20; const pct=total?Math.min(done/total,1):0; const f=BW*pct;
+    svg+=`<rect x="${x+10}" y="${y+4}" width="${BW}" height="13" rx="5" fill="#e2e8f0"/>`;
+    if(f>0) svg+=`<rect x="${x+10}" y="${y+4}" width="${Math.max(f,10).toFixed(1)}" height="13" rx="5" fill="${color}"/>`;
+    svg+=`<text x="${x+10+Math.max(f,18)/2}" y="${y+14}" text-anchor="middle" font-size="9" font-weight="700" fill="${pct>0.12?'#fff':'#475569'}">${(pct*100).toFixed(0)}%</text>`;
+  };
+
+  ZONE_DEF.forEach((z,zi)=>{
+    const x=PAD+zi*(ZONE_W+12); const y=4;
+    const axKeys=Object.keys(AXIS_PLAN).filter(z.keys);
+    const pileIds=axKeys.flatMap(ax=>(AXIS_PLAN[ax].piles||[]).map(p=>p.id));
+    const bpD=pileIds.filter(id=>donePiles.has(id)).length; const bpT=pileIds.length;
+    const ftD=ftRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
+    const ftT=axKeys.length;
+    const cpD=colRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
+    const cpT=axKeys.length;
+    totBpD+=bpD;totBpT+=bpT;totFtD+=ftD;totFtT+=ftT;totCpD+=cpD;totCpT+=cpT;
+    const nPiers=new Set(axKeys.map(k=>k.replace(/-LT|-RT|-L|-R/g,''))).size;
+
+    svg+=`<rect x="${x}" y="${y}" width="${ZONE_W}" height="${ZONE_H}" rx="10" fill="${z.bg}" stroke="${z.border}" stroke-width="1.5" style="cursor:pointer" onclick="pvGoZone('${z.id}');switchTab('plan')"/>`;
+    svg+=`<rect x="${x}" y="${y}" width="${ZONE_W}" height="34" rx="10" fill="${z.color}"/>`;
+    svg+=`<rect x="${x}" y="${y+22}" width="${ZONE_W}" height="12" fill="${z.color}"/>`;
+    svg+=`<text x="${x+ZONE_W/2}" y="${y+22}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">${z.label}</text>`;
+    svg+=`<text x="${x+ZONE_W/2}" y="${y+43}" text-anchor="middle" font-size="7.5" fill="#64748b">${z.range}</text>`;
+    svg+=`<text x="${x+10}" y="${y+56}" font-size="10" fill="#475569">Pier</text>`;
+    svg+=`<text x="${x+ZONE_W-10}" y="${y+56}" text-anchor="end" font-size="10" font-weight="700" fill="#1e293b">${nPiers}</text>`;
+    svg+=`<text x="${x+10}" y="${y+70}" font-size="10" fill="#475569">Axis</text>`;
+    svg+=`<text x="${x+ZONE_W-10}" y="${y+70}" text-anchor="end" font-size="10" font-weight="700" fill="#1e293b">${axKeys.length}</text>`;
+
+    const rows=[
+      {lbl:'Bored Pile',d:bpD,t:bpT,u:'ต้น',c:'#16a34a',y0:80},
+      {lbl:'Footing',   d:ftD,t:ftT,u:'ฐาน',c:'#0284c7',y0:124},
+      {lbl:'Column',    d:cpD,t:cpT,u:'ต้น',c:'#7c3aed',y0:168},
+    ];
+    let extraY=212;
+    z.extra.forEach(ex=>{
+      const ed=records.filter(r=>ex.ids.some(id=>r.item_id===id)).reduce((s,r)=>s+(r.qty||0),0);
+      rows.push({lbl:ex.label,d:ed,t:ex.total,u:'แห่ง',c:'#f97316',y0:extraY});
+      extraY+=44;
+    });
+
+    rows.forEach(b=>{
+      svg+=`<text x="${x+10}" y="${y+b.y0}" font-size="10" font-weight="700" fill="#334155">${b.lbl}</text>`;
+      svg+=`<text x="${x+ZONE_W-10}" y="${y+b.y0}" text-anchor="end" font-size="9" fill="#64748b">${b.d}/${b.t}</text>`;
+      drawBar(x, y+b.y0, b.d, b.t, b.c);
+      svg+=`<text x="${x+ZONE_W/2}" y="${y+b.y0+30}" text-anchor="middle" font-size="9" fill="#ef4444">คงเหลือ ${b.t-b.d} ${b.u}</text>`;
+    });
+
+    // pier dots
+    const dotY=y+ZONE_H-28;
+    const nd=Math.min(nPiers,16); const dsp=(ZONE_W-20)/(nd+1);
+    for(let di=0;di<nd;di++){
+      const dx=x+10+dsp*(di+1);
+      const ok=di<Math.round(bpD/(bpT/Math.max(axKeys.length,1)||4));
+      svg+=`<circle cx="${dx}" cy="${dotY}" r="4" fill="${ok?z.color:'#e2e8f0'}" stroke="${z.border}" stroke-width="1"/>`;
+    }
+    svg+=`<text x="${x+ZONE_W/2}" y="${dotY+14}" text-anchor="middle" font-size="7" fill="${z.color}" font-weight="600" style="cursor:pointer" onclick="pvGoZone('${z.id}');switchTab('plan')">คลิกดูแปลน →</text>`;
+  });
+
+  // footer
+  const fy=ZONE_H+14;
+  svg+=`<rect x="${PAD}" y="${fy}" width="${W-PAD*2}" height="28" rx="8" fill="#1e293b" opacity="0.06"/>`;
+  [{l:`BP ${totBpD}/${totBpT} (${totBpT?(totBpD/totBpT*100).toFixed(1):0}%)`,c:'#16a34a'},
+   {l:`Footing ${totFtD}/${totFtT} (${totFtT?(totFtD/totFtT*100).toFixed(1):0}%)`,c:'#0284c7'},
+   {l:`Column ${totCpD}/${totCpT} (${totCpT?(totCpD/totCpT*100).toFixed(1):0}%)`,c:'#7c3aed'}
+  ].forEach((s,si)=>{
+    const sx=PAD+16+si*(W-PAD*2-32)/3;
+    svg+=`<circle cx="${sx}" cy="${fy+14}" r="5" fill="${s.c}"/>`;
+    svg+=`<text x="${sx+10}" y="${fy+19}" font-size="11" font-weight="700" fill="#334155">${s.l}</text>`;
+  });
+
+  svg+='</svg>';
+  el.innerHTML=svg;
+}
+
+// ─── Zone Cards (kept for compat) ────────────────────────────────────────────
+function renderZoneCards(){
+  const container = document.getElementById('zone-cards-container');
+  if(!container) return;
+
+  const ZONE_CFG = {
+    A:{ label:'Zone A', range:'P03-165–189', color:'#16a34a', bg:'from-green-50 to-green-100', border:'border-green-300',
+        axes: k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=165&&+RegExp.$1<=189,
+        extra:[] },
+    B:{ label:'Zone B', range:'P03-130–164', color:'#0284c7', bg:'from-sky-50 to-sky-100',   border:'border-sky-300',
+        axes: k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=130&&+RegExp.$1<=164,
+        extra:[] },
+    C:{ label:'Zone C', range:'P03-67–129',  color:'#d97706', bg:'from-amber-50 to-amber-100',border:'border-amber-300',
+        axes: k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=67&&+RegExp.$1<=129,
+        extra:[{label:'Cross Beam',total:3,ids:['col-002','col-003']}] },
+    D:{ label:'Zone D', range:'ST-P-01–18',  color:'#a855f7', bg:'from-purple-50 to-purple-100',border:'border-purple-300',
+        axes: k=>k.startsWith('ST-P-'),
+        extra:[{label:'Portal Frame',total:18,ids:['col-004','col-005']}] },
+    E:{ label:'Zone E', range:'P03-40–65',   color:'#dc2626', bg:'from-red-50 to-red-100',   border:'border-red-300',
+        axes: k=>k.startsWith('P03-')&&/P03-(\d+)/.test(k)&&+RegExp.$1>=40&&+RegExp.$1<=65,
+        extra:[] },
+  };
+
+  const donePiles = new Set(records.filter(r=>r.category==='Bored Pile').map(r=>r.pile_id).filter(Boolean));
+  const ftRecs    = records.filter(r=>r.item_id&&r.item_id.startsWith('ft-'));
+  const colRecs   = records.filter(r=>r.item_id&&r.item_id.startsWith('col-'));
+
+  let html='';
+  Object.entries(ZONE_CFG).forEach(([zid,z])=>{
+    const axKeys = Object.keys(AXIS_PLAN).filter(z.axes);
+    const pileIds = axKeys.flatMap(ax=>(AXIS_PLAN[ax].piles||[]).map(p=>p.id));
+    const bpDone  = pileIds.filter(id=>donePiles.has(id)).length;
+    const bpTotal = pileIds.length;
+    const ftDone  = ftRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
+    const ftTotal = axKeys.length;
+    const colDone = colRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
+    const colTotal= axKeys.length;
+
+    const bpPct  = bpTotal  ? (bpDone/bpTotal*100)  : 0;
+    const ftPct  = ftTotal  ? (ftDone/ftTotal*100)  : 0;
+    const colPct = colTotal ? (colDone/colTotal*100): 0;
+
+    // mini progress bars
+    const bar=(done,total,color)=>{
+      const pct=total?Math.min(done/total*100,100):0;
+      return `<div class="flex items-center gap-1.5 mt-1">
+        <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div style="width:${pct.toFixed(1)}%;background:${color}" class="h-full rounded-full transition-all"></div>
+        </div>
+        <span class="text-xs font-bold" style="color:${color};min-width:28px">${pct.toFixed(0)}%</span>
+      </div>`;
+    };
+
+    // extra items
+    const extraHtml = z.extra.map(ex=>{
+      const exDone=records.filter(r=>ex.ids.some(id=>r.item_id===id)).reduce((s,r)=>s+(r.qty||0),0);
+      const exPct=ex.total?exDone/ex.total*100:0;
+      return `<div class="mt-1.5">
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-500">${ex.label}</span>
+          <span class="font-semibold text-gray-700">${exDone}/${ex.total}</span>
+        </div>
+        ${bar(exDone,ex.total,'#f97316')}
+      </div>`;
+    }).join('');
+
+    html+=`<div class="bg-gradient-to-br ${z.bg} border ${z.border} rounded-2xl p-3 shadow-sm cursor-pointer hover:shadow-md transition"
+      onclick="pvGoZone('${zid}');switchTab('plan')" title="คลิกเพื่อดูแปลน Zone ${zid}">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-black text-sm" style="color:${z.color}">${z.label}</span>
+        <span class="text-xs text-gray-400">${z.range}</span>
+      </div>
+      <div class="text-xs text-gray-500 mb-2">${axKeys.length} axes</div>
+
+      <div class="space-y-0.5">
+        <div class="flex justify-between text-xs"><span class="text-gray-500">Bored Pile</span><span class="font-semibold text-gray-700">${bpDone}/${bpTotal}</span></div>
+        ${bar(bpDone,bpTotal,'#16a34a')}
+
+        <div class="flex justify-between text-xs mt-1.5"><span class="text-gray-500">Footing</span><span class="font-semibold text-gray-700">${ftDone}/${ftTotal}</span></div>
+        ${bar(ftDone,ftTotal,'#0284c7')}
+
+        <div class="flex justify-between text-xs mt-1.5"><span class="text-gray-500">Column</span><span class="font-semibold text-gray-700">${colDone}/${colTotal}</span></div>
+        ${bar(colDone,colTotal,'#7c3aed')}
+
+        ${extraHtml}
+      </div>
+
+      <div class="mt-2 text-center text-xs font-semibold" style="color:${z.color}">
+        คลิกดูแปลน →
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function renderSummaryTable() {
   const cats=['Bored Pile','Static Pile Load Test','Dynamic Pile Load Test','Sonic Logging Test','Footing','Column / Crossbeam','Cable Trough','Concrete Barrier'];
   const catColors={
     'Bored Pile':'bg-indigo-500','Static Pile Load Test':'bg-cyan-500','Dynamic Pile Load Test':'bg-teal-500',
@@ -2684,27 +3099,314 @@ const PV_STA_MAX = 571340;
 function getPvAxisGroups() {
   const seen = new Set();
   const groups = [];
-  // Use MASTER_PILES_ORDERED to keep sheet order
   MASTER_PILES_ORDERED.forEach(g => {
     const ax = g.axis;
     const d = AXIS_PLAN[ax];
     if (!d || !d.sta) return;
-    // Normalize: strip -LT/-RT → base; -L/-R → base (for grouping display)
-    // But keep the actual axis key for data lookup
-    // Group LT+RT together, L+R together
+
+    // LT/RT ที่ STA เดียวกัน → group เป็น pair (baseKey = ไม่มี suffix)
+    // L/R ที่ STA เดียวกัน → group เป็น pair
+    // อื่น → group ของตัวเอง
     let baseKey = ax;
-    if (ax.endsWith('-LT') || ax.endsWith('-RT')) baseKey = ax.replace(/-LT$|-RT$/, '');
-    else if (ax.endsWith('-L') || ax.endsWith('-R')) baseKey = ax.replace(/-L$|-R$/, '');
+    if      (ax.endsWith('-LT')) baseKey = ax.replace(/-LT$/, '');
+    else if (ax.endsWith('-RT')) baseKey = ax.replace(/-RT$/, '');
+    else if (ax.endsWith('-L'))  baseKey = ax.replace(/-L$/, '');
+    else if (ax.endsWith('-R'))  baseKey = ax.replace(/-R$/, '');
+
     if (!seen.has(baseKey)) {
       seen.add(baseKey);
-      groups.push({ baseKey, sta: d.sta, axes: [] });
+      // isPaired = มี LT/RT หรือ L/R
+      const isPaired = ax !== baseKey;
+      groups.push({ baseKey, sta: d.sta, axes: [], isPaired });
     }
-    groups.find(g2 => g2.baseKey === baseKey).axes.push(ax);
+    const grp = groups.find(g2 => g2.baseKey === baseKey);
+    if (grp && !grp.axes.includes(ax)) grp.axes.push(ax);
   });
   return groups.sort((a,b) => a.sta - b.sta);
 }
 
-const PV_FIXED_SCALE = 5.5;
+const PV_FIXED_SCALE = 1.75;
+
+// ─── Project Overview (กด ALL) = Mini Route Map ──────────────────────────────
+function renderProjectOverview() {
+  ['bp','ft','col'].forEach(p => {
+    const el = document.getElementById('pv-strip-'+p);
+    if (el) { el.classList.add('hidden'); el.innerHTML=''; }
+    pvPanels[p] = false;
+    const btn = document.getElementById('toggle-'+p);
+    if (btn) btn.style.cssText = 'background:#f1f5f9;color:#64748b;border-color:#cbd5e1';
+  });
+
+  const canvas = document.getElementById('pv-canvas');
+  const W   = Math.max(canvas.parentElement?.offsetWidth || 900, 700);
+  const H   = 300;
+  const PAD = 36;
+  const TRACK_Y  = 148;
+  const TRACK_W  = W - PAD*2;
+
+  // STA range
+  const STA_MIN = 566367, STA_MAX = 571340;
+  const stX = sta => PAD + (sta - STA_MIN)/(STA_MAX - STA_MIN) * TRACK_W;
+
+  // Zones
+  const ZONES = [
+    {id:'E',label:'ZONE E', pierFrom:'P03-40', pierTo:'P03-64',   color:'#dc2626',bg:'#fee2e2', sta0:566367, sta1:567012},
+    {id:'D',label:'ZONE D', pierFrom:'P65–P66\n(Station)',pierTo:'',color:'#7c3aed',bg:'#ede9fe', sta0:567012, sta1:567672},
+    {id:'C',label:'ZONE C', pierFrom:'P03-67',  pierTo:'P03-129', color:'#d97706',bg:'#fef3c7', sta0:567672, sta1:569552},
+    {id:'B',label:'ZONE B', pierFrom:'P03-130', pierTo:'P03-164', color:'#0284c7',bg:'#e0f2fe', sta0:569552, sta1:570593},
+    {id:'A',label:'ZONE A', pierFrom:'P03-165', pierTo:'P03-189', color:'#16a34a',bg:'#f0fdf4', sta0:570593, sta1:571340},
+  ];
+
+  // Landmarks (numbered circles)
+  const LANDMARKS = [
+    {no:'1', sta:566500, label:'จุดตัดถนนนิโต – ช่วงเข้าสถานีรถไฟอุดร', y:TRACK_Y+55, side:'below'},
+    {no:'2', sta:568320, label:'สะพานเหล็กข้ามลำธาร',                    y:TRACK_Y+55, side:'below'},
+    {no:'3', sta:569260, label:'จุดตัด ถนนแวร์ชายส์',                    y:TRACK_Y+55, side:'below'},
+    {no:'4', sta:569900, label:'จุดตัดทางหลวงหมายเลข 216',              y:TRACK_Y+55, side:'below'},
+    {no:'5', sta:571260, label:'คลองหมากแข้ง',                           y:TRACK_Y+55, side:'below'},
+  ];
+
+  // ── Pier boundary markers
+
+  // record stats per zone
+  const donePiles = new Set(records.filter(r=>r.category==='Bored Pile').map(r=>r.pile_id).filter(Boolean));
+  const zoneFilter = {
+    A: k => k.startsWith('P03-') && /P03-(\d+)/.test(k) && +RegExp.$1>=165 && +RegExp.$1<=189,
+    B: k => k.startsWith('P03-') && /P03-(\d+)/.test(k) && +RegExp.$1>=130 && +RegExp.$1<=164,
+    C: k => k.startsWith('P03-') && /P03-(\d+)/.test(k) && +RegExp.$1>=67  && +RegExp.$1<=129,
+    D: k => k.startsWith('ST-P-'),
+    E: k => k.startsWith('P03-') && /P03-(\d+)/.test(k) && +RegExp.$1>=40  && +RegExp.$1<=65,
+  };
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="font-family:'Sarabun',sans-serif;display:block;background:#fff;border-radius:12px">`;
+
+  // ── Background
+  svg += `<rect width="${W}" height="${H}" fill="#f8fafc" rx="12"/>`;
+
+  // ── START / FINISH labels
+  svg += `<rect x="${PAD-28}" y="${TRACK_Y-14}" width="26" height="28" rx="4" fill="#16a34a"/>`;
+  svg += `<text x="${PAD-15}" y="${TRACK_Y+6}" text-anchor="middle" font-size="8" font-weight="800" fill="#fff">START</text>`;
+  svg += `<rect x="${W-PAD+2}" y="${TRACK_Y-14}" width="30" height="28" rx="4" fill="#eab308"/>`;
+  svg += `<text x="${W-PAD+17}" y="${TRACK_Y+6}" text-anchor="middle" font-size="8" font-weight="800" fill="#fff">FINISH</text>`;
+
+  // ── Zone bands (below track level, like elevation fill)
+  ZONES.forEach(z => {
+    const x0 = stX(z.sta0), x1 = stX(z.sta1);
+    const zw = x1-x0;
+    const axKeys  = Object.keys(AXIS_PLAN).filter(zoneFilter[z.id]||(() => false));
+    const pileIds = axKeys.flatMap(ax=>(AXIS_PLAN[ax].piles||[]).map(p=>p.id));
+    const bpDone  = pileIds.filter(id=>donePiles.has(id)).length;
+    const bpTotal = pileIds.length;
+    const bpPct   = bpTotal ? bpDone/bpTotal : 0;
+
+    // zone fill band (below track)
+    svg += `<rect x="${x0.toFixed(1)}" y="${TRACK_Y-12}" width="${zw.toFixed(1)}" height="24" fill="${z.bg}" stroke="${z.color}" stroke-width="1.5" rx="3" style="cursor:pointer" onclick="pvGoZone('${z.id}');switchTab('plan')" opacity="0.85"/>`;
+
+    // zone label box (above track)
+    const mx = (x0+x1)/2;
+    const boxW = Math.max(Math.min(zw-4, 110), 55);
+    const boxH = 42;
+    const boxY = TRACK_Y - 72;
+    svg += `<rect x="${(mx-boxW/2).toFixed(1)}" y="${boxY}" width="${boxW}" height="${boxH}" rx="6" fill="#fff" stroke="${z.color}" stroke-width="2"/>`;
+    svg += `<text x="${mx}" y="${boxY+16}" text-anchor="middle" font-size="10" font-weight="800" fill="${z.color}">${z.label}</text>`;
+    svg += `<text x="${mx}" y="${boxY+30}" text-anchor="middle" font-size="8" font-weight="700" fill="#ef4444">${z.pierFrom}</text>`;
+    if(z.pierTo) svg += `<text x="${mx}" y="${boxY+40}" text-anchor="middle" font-size="7.5" font-weight="600" fill="#ef4444">– ${z.pierTo}</text>`;
+
+    // connector line box → track
+    svg += `<line x1="${mx}" y1="${boxY+boxH}" x2="${mx}" y2="${TRACK_Y-12}" stroke="${z.color}" stroke-width="1" stroke-dasharray="3 2"/>`;
+
+    // progress bar inside zone band
+    if(zw > 40) {
+      const bw = Math.min(zw-8, 120);
+      const bx = mx - bw/2;
+      const by = TRACK_Y + 16;
+      const filled = bw * bpPct;
+      svg += `<rect x="${bx.toFixed(1)}" y="${by}" width="${bw.toFixed(1)}" height="7" rx="3" fill="#e2e8f0"/>`;
+      if(filled>0) svg += `<rect x="${bx.toFixed(1)}" y="${by}" width="${Math.max(filled,4).toFixed(1)}" height="7" rx="3" fill="${z.color}"/>`;
+      svg += `<text x="${mx}" y="${by+17}" text-anchor="middle" font-size="7" fill="${z.color}" font-weight="600">${bpDone}/${bpTotal} (${(bpPct*100).toFixed(0)}%)</text>`;
+    }
+  });
+
+  // ── Rail track (on top of zone bands)
+  svg += `<rect x="${PAD}" y="${TRACK_Y-4}" width="${TRACK_W}" height="8" rx="2" fill="#94a3b8"/>`;
+  svg += `<line x1="${PAD}" y1="${TRACK_Y-5}" x2="${W-PAD}" y2="${TRACK_Y-5}" stroke="#64748b" stroke-width="1.5"/>`;
+  svg += `<line x1="${PAD}" y1="${TRACK_Y+5}" x2="${W-PAD}" y2="${TRACK_Y+5}" stroke="#64748b" stroke-width="1.5"/>`;
+  for(let i=0;i<=24;i++){
+    const sx = PAD + i*TRACK_W/24;
+    svg += `<line x1="${sx}" y1="${TRACK_Y-8}" x2="${sx}" y2="${TRACK_Y+8}" stroke="#cbd5e1" stroke-width="3"/>`;
+  }
+
+  // ── Station box (Zone D center)
+  const staDx = stX(567340); const staDy = TRACK_Y-1;
+  svg += `<rect x="${(staDx-24).toFixed(1)}" y="${staDy-10}" width="48" height="20" rx="4" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4 2"/>`;
+  svg += `<text x="${staDx}" y="${staDy+4}" text-anchor="middle" font-size="7.5" fill="#7c3aed" font-weight="700">Station</text>`;
+  svg += `<text x="${(staDx-14).toFixed(1)}" y="${staDy+4}" text-anchor="middle" font-size="7" fill="#7c3aed">S1</text>`;
+  svg += `<text x="${(staDx+14).toFixed(1)}" y="${staDy+4}" text-anchor="middle" font-size="7" fill="#7c3aed">S18</text>`;
+
+  // Pier boundary markers (vertical ticks + labels alternating)
+  const PIER_MARKS = [
+    {label:'P40',  sta:566367, alt:0},
+    {label:'P52',  sta:566700, alt:1},
+    {label:'P59',  sta:566920, alt:0},
+    {label:'P65',  sta:567102, alt:1},
+    {label:'P66',  sta:567672, alt:0},
+    {label:'P99',  sta:568632, alt:0},
+    {label:'P100', sta:568682, alt:1},
+    {label:'P129', sta:569547, alt:0},
+    {label:'P130', sta:569582, alt:1},
+    {label:'P163', sta:570566, alt:0},
+    {label:'P164', sta:570593, alt:1},
+    {label:'P165', sta:570623, alt:0},
+    {label:'P179', sta:571030, alt:1},
+    {label:'P189', sta:571340, alt:0},
+  ];
+
+  PIER_MARKS.forEach(pm => {
+    const px = stX(pm.sta);
+    const isUp = pm.alt === 0;
+    const labelY = isUp ? TRACK_Y-22 : TRACK_Y+28;
+    const tickY1 = isUp ? TRACK_Y-16 : TRACK_Y+8;
+    const tickY2 = isUp ? TRACK_Y-8  : TRACK_Y+16;
+    svg += `<line x1="${px}" y1="${tickY1}" x2="${px}" y2="${tickY2}" stroke="#374151" stroke-width="1" stroke-dasharray="2 2"/>`;
+    svg += `<text x="${px}" y="${labelY}" text-anchor="middle" font-size="7" font-weight="700" fill="#374151">${pm.label}</text>`;
+  });
+
+  // ── KM labels bottom
+  for(let km=566;km<=572;km++){
+    const kx = stX(km*1000);
+    if(kx<PAD||kx>W-PAD) continue;
+    svg += `<line x1="${kx}" y1="${TRACK_Y+8}" x2="${kx}" y2="${TRACK_Y+14}" stroke="#94a3b8" stroke-width="0.8"/>`;
+    svg += `<text x="${kx}" y="${H-20}" text-anchor="middle" font-size="7" fill="#94a3b8">KM ${km}</text>`;
+  }
+
+  // ── Direction
+  svg += `<text x="${PAD+2}" y="${H-8}" font-size="7.5" fill="#64748b">← ขอนแก่น</text>`;
+  svg += `<text x="${W-PAD-2}" y="${H-8}" text-anchor="end" font-size="7.5" fill="#64748b">หนองคาย →</text>`;
+
+  // ── Landmark numbered circles
+  LANDMARKS.forEach(lm => {
+    const lx = stX(lm.sta);
+    const ly = lm.y;
+    // vertical line from track to circle
+    svg += `<line x1="${lx}" y1="${TRACK_Y+8}" x2="${lx}" y2="${ly-8}" stroke="#64748b" stroke-width="0.8" stroke-dasharray="2 2"/>`;
+    // circle
+    svg += `<circle cx="${lx}" cy="${ly}" r="9" fill="#374151"/>`;
+    svg += `<text x="${lx}" y="${ly+4}" text-anchor="middle" font-size="8" font-weight="800" fill="#fff">${lm.no}</text>`;
+    // label below
+    const labelLines = lm.label.split(' – ');
+    labelLines.forEach((line,i) => {
+      svg += `<text x="${lx}" y="${ly+20+i*11}" text-anchor="middle" font-size="6.5" fill="#374151">${line}</text>`;
+    });
+  });
+
+  // ── Legend (bottom right)
+  const LX=W-120, LY=H-48;
+  svg += `<rect x="${LX-4}" y="${LY-10}" width="118" height="50" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>`;
+  svg += `<circle cx="${LX+8}" cy="${LY+4}" r="5" fill="#374151"/>`;
+  svg += `<text x="${LX+10}" y="${LY+3}" font-size="7" fill="#374151"> Landmark</text>`;
+  svg += `<rect x="${LX+4}" y="${LY+16}" width="10" height="6" rx="2" fill="#16a34a"/>`;
+  svg += `<text x="${LX+18}" y="${LY+21}" font-size="7" fill="#64748b">BP แล้วเสร็จ</text>`;
+  svg += `<rect x="${LX+4}" y="${LY+28}" width="10" height="6" rx="2" fill="#e2e8f0"/>`;
+  svg += `<text x="${LX+18}" y="${LY+33}" font-size="7" fill="#64748b">BP คงเหลือ</text>`;
+
+  svg += '</svg>';
+  canvas.innerHTML = svg;
+}
+
+
+// ─── ZONE definitions ──────────────────────────────────────────────────────
+const PV_ZONES = {
+  A:   { label:'Zone A', fromKey:'P03-165',  toKey:'P03-189'  },
+  B:   { label:'Zone B', fromKey:'P03-130',  toKey:'P03-164'  },
+  C:   { label:'Zone C', fromKey:'P03-67',   toKey:'P03-129'  },
+  D:   { label:'Zone D', fromKey:'ST-P-01',  toKey:'ST-P-18'  },
+  E:   { label:'Zone E', fromKey:'P03-40',   toKey:'P03-65'   },
+  ALL: { label:'All',    fromKey:null,        toKey:null        },
+};
+
+let _pvActiveZone = null;
+let pvFitMode = false;
+
+function pvToggleFit() {
+  pvFitMode = !pvFitMode;
+  const btn = document.getElementById('pv-fit-btn');
+  if (btn) {
+    btn.style.cssText = pvFitMode
+      ? 'background:#dbeafe;color:#1e40af;border-color:#93c5fd;font-weight:700'
+      : 'background:#f1f5f9;color:#64748b;border-color:#cbd5e1';
+    btn.textContent = pvFitMode ? '🔍 Fit ON' : '🔍 Fit Screen';
+  }
+  renderPlanView();
+}
+
+function pvZoneClear(){
+  _pvActiveZone = null;
+  document.querySelectorAll('.pv-zone-btn').forEach(b => b.style.outline='none');
+}
+
+function pvGoZone(zoneId){
+  _pvActiveZone = zoneId;
+  document.querySelectorAll('.pv-zone-btn').forEach(b => {
+    const label = b.textContent.trim();
+    b.style.outline = (label===zoneId||(zoneId==='ALL'&&label==='All')) ? '2px solid #1d4ed8' : 'none';
+    b.style.outlineOffset = '1px';
+  });
+
+  // ALL → แสดง Project Overview SVG แทนแปลนปกติ
+  if (zoneId === 'ALL') {
+    renderProjectOverview();
+    return;
+  }
+
+  const z = PV_ZONES[zoneId];
+  if(!z) return;
+
+  const groups = getPvAxisGroups();
+
+  // คำนวณ index ก่อน
+  let newFrom = 0, newTo = groups.length - 1;
+
+  if(zoneId !== 'ALL'){
+    const findIdx = (key, fallback) => {
+      if(!key) return fallback;
+      // exact baseKey match
+      const idx = groups.findIndex(g => g.baseKey === key);
+      if(idx !== -1) return idx;
+      // numeric fallback
+      const num = parseInt(key.replace(/\D/g,''));
+      if(isNaN(num)) return fallback;
+      return groups.reduce((best, g, i) => {
+        const n = parseInt(g.baseKey.replace(/\D/g,''));
+        if(isNaN(n)) return best;
+        return Math.abs(n - num) < Math.abs(parseInt(groups[best].baseKey.replace(/\D/g,''))||99999 - num)
+          ? i : best;
+      }, 0);
+    };
+    const fi = findIdx(z.fromKey, 0);
+    const ti = findIdx(z.toKey, groups.length-1);
+    newFrom = Math.min(fi, ti);
+    newTo   = Math.max(fi, ti);
+  }
+
+  // อัปเดต pvState ก่อน initPvSelects
+  pvState.from  = newFrom;
+  pvState.to    = newTo;
+  pvState.ready = true;
+
+  // ตรวจว่าอยู่ใน Plan View tab แล้วหรือยัง
+  const planView = document.getElementById('view-plan');
+  const isOnPlan = planView && !planView.classList.contains('hidden');
+
+  if (!isOnPlan) {
+    switchTab('plan');
+    // switchTab เรียก initPvSelects+renderPlanView อยู่แล้ว pvState.ready=true จึงถูกต้อง
+  } else {
+    initPvSelects();
+    renderPlanView();
+  }
+}
+
+
 
 function initPvSelects() {
   const groups = getPvAxisGroups();
@@ -2735,176 +3437,264 @@ function onPvScaleChange() {
 }
 
 function renderPlanView() {
-  const groups = getPvAxisGroups();
+  const groups  = getPvAxisGroups();
   const fromIdx = parseInt(document.getElementById('pv-from').value);
   const toIdx   = parseInt(document.getElementById('pv-to').value);
-  const scale = PV_FIXED_SCALE;
-
-  // บันทึก state ทุกครั้งที่ render
-  pvState.from  = fromIdx;
-  pvState.to    = toIdx;
-  pvState.scale = scale;
+  const scale   = PV_FIXED_SCALE;
+  pvState.from  = fromIdx; pvState.to = toIdx; pvState.scale = scale;
 
   const visible = groups.slice(Math.min(fromIdx,toIdx), Math.max(fromIdx,toIdx)+1);
   if (!visible.length) return;
 
-  const pilesSet = getPileDoneSet();
-
-  // Layout
-  const pxPerM   = 1.8 * scale;
-  const HEADER_H = 36;
-  const AX_LBL_H = 18;
-  const PILE_H   = 110;   // taller: dual-track VP1S needs ~4×sp rows
-  const FOOT_H   = 24;
-  const TOTAL_H  = HEADER_H + AX_LBL_H + PILE_H + FOOT_H;
+  // ── Auto-scale เมื่อ Fit Mode ──────────────────────────────────────────
+  const canvasEl = document.getElementById('pv-canvas');
+  const canvasW  = canvasEl?.parentElement?.offsetWidth || 900;
   const LEFT_PAD = 60;
+
+  let fitScale = scale;
+  if (pvFitMode && visible.length > 1) {
+    const staSpan = visible[visible.length-1].sta - visible[0].sta + 40;
+    const availW  = canvasW - LEFT_PAD - 60;
+    fitScale = Math.max(0.4, Math.min(availW / (staSpan * 1.8), 5.5));
+    const lbl = document.getElementById('pv-scale-label');
+    if (lbl) lbl.textContent = fitScale.toFixed(2)+'×';
+  } else {
+    const lbl = document.getElementById('pv-scale-label');
+    if (lbl) lbl.textContent = scale.toFixed(1)+'×';
+  }
+
+  const pilesSet = getPileDoneSet();
+  const pxPerM   = 1.8 * fitScale;
+
+  const SEG_H      = 22;
+  const COL_H      = 48;
+  const FTG_W      = 44;
+  const FTG_H      = 18;
+  const PILE_PLAN_H= 90;
+  const TOP_LBL    = 14;
+  const TOP_H      = TOP_LBL + 6;
+  const TOTAL_H    = TOP_H + SEG_H + COL_H + FTG_H + PILE_PLAN_H + 36;
+
+  const Y_SEG_TOP = TOP_H;
+  const Y_SEG_BOT = Y_SEG_TOP + SEG_H;
+  const Y_COL_TOP = Y_SEG_BOT;
+  const Y_COL_BOT = Y_COL_TOP + COL_H;
+  const Y_FTG_TOP = Y_COL_BOT;
+  const Y_FTG_BOT = Y_FTG_TOP + FTG_H;
+  const Y_LBL     = Y_FTG_BOT + PILE_PLAN_H + 14;  // ← declare ที่นี่ ใช้ได้ทั่ว function
 
   const staStart = visible[0].sta;
   const staEnd   = visible[visible.length-1].sta + 40;
   const totalW   = LEFT_PAD + (staEnd - staStart)*pxPerM + 60;
-  const centerY  = HEADER_H + AX_LBL_H + PILE_H/2;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${TOTAL_H}" style="font-family:sans-serif">`;
-  svg += `<rect x="0" y="0" width="${totalW}" height="${TOTAL_H}" fill="#f8fafc"/>`;
-  svg += `<rect x="0" y="${HEADER_H+AX_LBL_H}" width="${totalW}" height="${PILE_H}" fill="#f1f5f9" opacity="0.6"/>`;
+  // ถ้ามี paired group → SVG สูงขึ้น 2 เท่า (2 แถว LT/RT)
+  const hasPaired  = visible.some(g => g.isPaired);
+  const SVG_H      = hasPaired ? TOTAL_H * 2 + 10 : TOTAL_H;
 
-  // Centerline
-  svg += `<line x1="${LEFT_PAD}" y1="${centerY}" x2="${totalW-10}" y2="${centerY}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 3"/>`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${SVG_H}" style="font-family:sans-serif;background:#f8fafc">`;
+  svg += `<rect x="0" y="0" width="${totalW}" height="${TOP_H}" fill="#e2e8f0" opacity="0.5"/>`;
+  svg += `<rect x="0" y="${Y_FTG_TOP}" width="${totalW}" height="${FTG_H+PILE_PLAN_H}" fill="#fef9c3" opacity="0.18"/>`;
 
-  // KM ticks
+  // Segment beam
+  if (visible.length > 0) {
+    const x0 = LEFT_PAD + (visible[0].sta - staStart)*pxPerM - 20;
+    const x1 = LEFT_PAD + (visible[visible.length-1].sta - staStart)*pxPerM + 20;
+    svg += `<rect x="${x0}" y="${Y_SEG_TOP+2}" width="${x1-x0}" height="${SEG_H-2}" rx="3" fill="white" stroke="#334155" stroke-width="1.5"/>`;
+    svg += `<text x="${(x0+x1)/2}" y="${Y_SEG_TOP+SEG_H/2+4}" text-anchor="middle" font-size="8" fill="#475569" font-weight="600">SEGMENT</text>`;
+  }
+
+  // STA ticks
   let kmTick = Math.ceil(staStart/100)*100;
   while(kmTick <= staEnd) {
-    const x = LEFT_PAD + (kmTick-staStart)*pxPerM;
-    svg += `<line x1="${x}" y1="${HEADER_H}" x2="${x}" y2="${HEADER_H+6}" stroke="#64748b" stroke-width="0.8"/>`;
-    svg += `<text x="${x}" y="${HEADER_H-4}" text-anchor="middle" font-size="9" fill="#64748b">${(kmTick/1000).toFixed(3)}</text>`;
+    const xt = LEFT_PAD + (kmTick-staStart)*pxPerM;
+    svg += `<line x1="${xt}" y1="${TOP_H-2}" x2="${xt}" y2="${TOP_H+4}" stroke="#64748b" stroke-width="0.8"/>`;
+    svg += `<text x="${xt}" y="${TOP_LBL-1}" text-anchor="middle" font-size="8" fill="#64748b">${(kmTick/1000).toFixed(3)}</text>`;
     kmTick += 100;
   }
 
+  // Legend (ไม่มีวงกลม — ใช้ text indicator เท่านั้น)
+  const LX=4; const LY=TOP_H+4;
+  svg += `<text x="${LX}" y="${LY+10}" font-size="7" fill="#16a34a">● BP แล้วเสร็จ</text>`;
+  svg += `<text x="${LX}" y="${LY+22}" font-size="7" fill="#f59e0b">● BP บางส่วน</text>`;
+  svg += `<text x="${LX}" y="${LY+34}" font-size="7" fill="#cbd5e1">● ยังไม่ทำ</text>`;
+  svg += `<text x="${LX}" y="${LY+46}" font-size="7" fill="#2563eb">■ COL done</text>`;
+  svg += `<text x="${LX}" y="${LY+58}" font-size="7" fill="#16a34a">▪ FTG done</text>`;
+
+  // Per group
   visible.forEach(group => {
+    if (!group.axes.length) return;
     const x = LEFT_PAD + (group.sta - staStart)*pxPerM;
-    const d0 = AXIS_PLAN[group.axes[0]] || {};
-    const isStaticTest = group.axes.some(ax => ax.includes('Static Test'));
+    const isPaired = group.isPaired;
+    const subAxes  = group.axes;
 
-    // Stem line
-    svg += `<line x1="${x}" y1="${HEADER_H+AX_LBL_H}" x2="${x}" y2="${HEADER_H+AX_LBL_H+PILE_H}" stroke="${isStaticTest?'#7c3aed':'#cbd5e1'}" stroke-width="${isStaticTest?1.5:1}"/>`;
+    // isPaired: แสดง 2 แถว ด้วย SVG group translate
+    // LT/L = แถวบน (yOffset=0), RT/R = แถวล่าง (yOffset = TOTAL_H)
+    const pairRowOffset = isPaired ? TOTAL_H : 0;
 
-    // AXIS label
-    let labelText = group.baseKey;
-    if (labelText.startsWith('P03-'))      labelText = labelText.replace('P03-','');
-    else if (labelText.startsWith('ST-P-')) labelText = labelText.replace('ST-P-','STP-');
-    else if (labelText.includes('Static Test')) labelText = 'ST●';
-    const labelColor = isStaticTest ? '#7c3aed' : '#475569';
-    svg += `<text x="${x}" y="${HEADER_H+AX_LBL_H-3}" text-anchor="middle" font-size="8.5" font-weight="600" fill="${labelColor}">${labelText}</text>`;
+    subAxes.forEach((ax, si) => {
+      const xSub = x;
+      const yOff = isPaired ? si * pairRowOffset : 0;
+      const d0   = AXIS_PLAN[ax] || {};
+      if (!d0.sta) return;
 
-    // Piles
-    group.axes.forEach((ax) => {
-      const d = AXIS_PLAN[ax];
-      if (!d) return;
-      const piles = d.piles || [];
-      const nPiles = piles.length;
+      // เปิด group translate สำหรับ row offset (RT แถวล่าง)
+      if (yOff > 0) svg += `<g transform="translate(0,${yOff})">`;
+      if (ax.includes('Static Test')) {
+        // ── Static Test: วาดที่ระดับเดียวกับ pile circles ─────────────────
+        const stColor   = '#7c3aed';
+        const stColorBg = '#ede9fe';
+        const ST_CY   = Y_FTG_BOT + PILE_PLAN_H * 0.5;  // กลาง pile area
+        const sp      = 12;
+        const allPilesS = d0.piles || [];
 
-      let rowSign = 0;
-      if (ax.endsWith('-LT')||ax.endsWith('-L')) rowSign = -1;
-      else if (ax.endsWith('-RT')||ax.endsWith('-R')) rowSign = 1;
-      const isDouble = (ax.endsWith('-LT')||ax.endsWith('-RT')||ax.endsWith('-L')||ax.endsWith('-R'));
-      const sp = 15; // pile spacing (px)  ← ต้องก่อน rowOff
-      // LT/L = above centerline (rowSign=-1), RT/R = below (+1)
-      // Need to clear 2 pile rows (sp*2) so groups don't overlap
-      const rowOff = isDouble ? rowSign * (sp * 2 + 4) : 0;
+        // Layout: 4 สี่เหลี่ยม + 1 กลาง (ตามที่ขอ)
+        // P1 P2    (บนซ้าย บนขวา)
+        //   P5     (กลาง)
+        // P3 P4    (ล่างซ้าย ล่างขวา)
+        const SLAYOUTS = {
+          5: [[-sp,-sp],[+sp,-sp],[-sp,+sp],[+sp,+sp],[0,0]],
+          4: [[-sp,-sp],[+sp,-sp],[-sp,+sp],[+sp,+sp]],
+          3: [[-sp,-sp],[+sp,-sp],[0,+sp]],
+        };
+        const sLayout = SLAYOUTS[allPilesS.length] || SLAYOUTS[5];
 
-      // Layout per drawing — STA increases to the RIGHT (+x = higher STA)
-      // 4-pile VP1/VP1S: B1=top-right, B2=bot-right, B3=bot-left, B4=top-left
-      // 6-pile VP2:      B1=top-right, B2=mid-right, B3=bot-right, B4=bot-left, B5=mid-left, B6=top-left
-      // 2-pile ST-P/F6:  B1=right(high STA), B2=left(low STA)  — single row
-      // 5-pile Static:   P1=bot-left, P2=top-left, P3=top-right, P4=bot-right, P5=center
-      const LAYOUTS = {
-        4: [ [+sp,-sp], [+sp,+sp], [-sp,+sp], [-sp,-sp] ],  // B1 B2 B3 B4
-        6: [ [+sp,-sp], [+sp,  0], [+sp,+sp], [-sp,+sp], [-sp,0], [-sp,-sp] ], // B1..B6
-        2: [ [+sp,  0], [-sp,  0] ],                          // B1 right, B2 left
-        5: [ [-sp,+sp], [-sp,-sp], [+sp,-sp], [+sp,+sp], [0,0] ], // P1..P5
-      };
+        // label "Static Test" ด้านบน (ใน footing zone)
+        svg += `<rect x="${(xSub-26).toFixed(1)}" y="${Y_FTG_TOP+1}" width="52" height="16" rx="4" fill="${stColorBg}" stroke="${stColor}" stroke-width="1.2"/>`;
+        svg += `<text x="${xSub}" y="${Y_FTG_TOP+12}" text-anchor="middle" font-size="6.5" font-weight="800" fill="${stColor}">Static Test</text>`;
+        svg += `<text x="${xSub}" y="${Y_FTG_BOT+10}" text-anchor="middle" font-size="6" fill="${stColor}">Ø${d0.dia}m × ${allPilesS.length}</text>`;
 
-      piles.forEach((p, pi) => {
-        const pid      = p.id;
-        const testType = PILE_TEST_MAP[pid] || null;
-        const isDone   = pilesSet.has(pid);
-        const pileR    = p.dia===1.2 ? 7 : 9;
+        // วงกลม pile (4 มุม + กลาง)
+        allPilesS.forEach((p, pi) => {
+          const isDone = pilesSet.has(p.id);
+          const off = sLayout[pi] || [0,0];
+          const px = xSub + off[0]; const py = ST_CY + off[1];
+          svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${isDone?stColor:stColorBg}" stroke="${stColor}" stroke-width="1.5"/>`;
+          svg += `<text x="${px}" y="${py+3}" text-anchor="middle" font-size="6" font-weight="700" fill="${isDone?'#fff':stColor}" pointer-events="none">${p.id.split('-').pop()}</text>`;
+        });
 
-        // Position — use layout table, fall back to generic for unknown counts
-        let px, py;
-        const layoutKey = LAYOUTS[nPiles] ? nPiles : null;
-        if (layoutKey && pi < LAYOUTS[layoutKey].length) {
-          const [dx, dy] = LAYOUTS[layoutKey][pi];
-          px = x + dx;
-          py = centerY + rowOff + dy;
-        } else {
-          // generic fallback: 2 cols, rows from top
-          px = x + (pi%2===0 ? +sp : -sp);
-          py = centerY + rowOff + (Math.floor(pi/2) - Math.floor((nPiles/2-1)/2)) * sp;
-        }
+        // ชื่อ label ใต้
+        const stLabel = ax.replace('No.','No.').replace('-Static Test 1.2',' ST Ø1.2').replace('-Static Test',' Static');
+        svg += `<rect x="${(xSub-30).toFixed(1)}" y="${Y_LBL-11}" width="60" height="13" rx="4" fill="${stColorBg}"/>`;
+        svg += `<text x="${xSub}" y="${Y_LBL}" text-anchor="middle" font-size="7" font-weight="700" fill="${stColor}">${stLabel}</text>`;
+        return;
+      }
 
-        // ── Fill colour: done=green, wip=yellow, pending=grey ────────────
-        const isWip = !isDone && wipPiles.has(pid);
-        let fill   = isDone ? '#22c55e' : isWip ? '#fde047' : '#e2e8f0';
-        let stroke = isDone ? '#15803d' : isWip ? '#ca8a04' : '#94a3b8';
-        let strokeW = (isDone || isWip) ? 1.5 : 0.8;
+      const ftRec  = records.find(r => r.item_id && r.item_id.startsWith('ft-') &&
+        (r.location===ax||(r.location||'').includes(ax)||(r.pile_id||'').includes(ax)));
+      const colRec = records.find(r => r.item_id && r.item_id.startsWith('col-') &&
+        (r.location===ax||(r.location||'').includes(ax)||(r.pile_id||'').includes(ax)));
+      const allPiles   = d0.piles || [];
+      const donePiles  = allPiles.filter(p => pilesSet.has(p.id));
+      const pileDone   = donePiles.length===allPiles.length && allPiles.length>0;
+      const pilePartial= donePiles.length>0 && donePiles.length<allPiles.length;
 
-        // ── Test ring: outer stroke colour changes ─────────────────────────
-        // sonic=orange ring, dynamic=red ring, static test axis=purple fill
-        let ringStroke = null;
-        let ringW = 2.5;
-        if (isStaticTest) {
-          fill   = isDone ? '#22c55e' : isWip ? '#fde047' : '#ede9fe';
-          stroke = isDone ? '#15803d' : isWip ? '#ca8a04' : '#7c3aed';
-          strokeW = 1.5;
-        } else if (testType==='dynamic') {
-          ringStroke = '#ef4444';
-        } else if (testType==='sonic') {
-          ringStroke = '#f97316';
-        }
+      const C_DONE='#16a34a'; const C_PART='#f59e0b'; const C_NONE='#cbd5e1';
+      const colFill = colRec ? '#2563eb' : C_NONE;
+      const ftFill  = ftRec  ? C_DONE   : C_NONE;
 
-        const eid = pid.replace(/[^a-zA-Z0-9]/g,'_');
-        // Outer test ring
-        if (ringStroke && !isStaticTest) {
-          svg += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${(pileR+3).toFixed(1)}" fill="none" stroke="${ringStroke}" stroke-width="${ringW}" stroke-dasharray="${testType==='dynamic'?'none':'3 2'}" opacity="0.85"/>`;
-        }
+      // Column (taper+shaft)
+      const nw = isPaired ? 20 : 38;
+      const cw = 10; const nh = 14; const sh = COL_H-nh;
+      const YNT = Y_COL_TOP; const YNB = YNT+nh;
+      svg += `<polygon points="${(xSub-nw/2).toFixed(1)},${YNT} ${(xSub+nw/2).toFixed(1)},${YNT} ${(xSub+cw/2).toFixed(1)},${YNB} ${(xSub-cw/2).toFixed(1)},${YNB}" fill="${colFill}" stroke="#334155" stroke-width="1.2"/>`;
+      svg += `<rect x="${(xSub-cw/2).toFixed(1)}" y="${YNB}" width="${cw}" height="${sh}" rx="1" fill="${colFill}" stroke="#334155" stroke-width="1.2"/>`;
+      if (colRec) svg += `<text x="${xSub}" y="${(YNB+sh/2+3).toFixed(1)}" text-anchor="middle" font-size="6" font-weight="700" fill="#fff">COL</text>`;
 
-        // Main pile circle
-        svg += `<circle id="pc_${eid}" data-pid="${pid}" data-ax="${ax}" data-tt="${testType||''}" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${pileR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" style="cursor:pointer" onclick="onPvCircleClick(event,this)"/>`;
+      // Footing
+      const fw = isPaired ? 28 : FTG_W;
+      svg += `<rect x="${(xSub-fw/2).toFixed(1)}" y="${Y_FTG_TOP}" width="${fw}" height="${FTG_H}" rx="2" fill="${ftFill}" stroke="#334155" stroke-width="1.2"/>`;
+      svg += `<text x="${xSub}" y="${(Y_FTG_TOP+FTG_H/2+4).toFixed(1)}" text-anchor="middle" font-size="6" font-weight="700" fill="${ftRec?'#fff':'#64748b'}">FTG</text>`;
 
-        // Pile label (B number)
-        const bNum = pid.split('-').pop();
-        const txtFill = isDone ? '#fff' : isWip ? '#92400e' : isStaticTest ? '#fff' : (testType ? '#1e293b' : '#64748b');
-        svg += `<text x="${px.toFixed(1)}" y="${(py+3.5).toFixed(1)}" text-anchor="middle" font-size="7" font-weight="600" fill="${txtFill}" pointer-events="none">${bNum}</text>`;
-
-        // Date label if done
-        const recList = records.filter(r=>r.pile_id===pid).sort((a,b)=>new Date(b.date)-new Date(a.date));
-        if (recList.length) {
-          const [yy,mm,dd] = recList[0].date.split('-');
-          svg += `<text x="${px.toFixed(1)}" y="${(py-pileR-2).toFixed(1)}" text-anchor="middle" font-size="7" fill="#dc2626" pointer-events="none">${parseInt(dd)}/${parseInt(mm)}/${yy.slice(2)}</text>`;
+      // Pile circles
+      const PLAN_Y = Y_FTG_BOT + PILE_PLAN_H/2;
+      const sp = isPaired ? 9 : 13;
+      const LAYOUTS = {4:[[+sp,-sp],[+sp,+sp],[-sp,+sp],[-sp,-sp]],2:[[0,-sp],[0,+sp]],6:[[+sp,-sp],[+sp,0],[+sp,+sp],[-sp,+sp],[-sp,0],[-sp,-sp]]};
+      const layout = LAYOUTS[allPiles.length] || LAYOUTS[4];
+      allPiles.forEach((p, pi) => {
+        const pid=p.id; const isDone=pilesSet.has(pid);
+        const tt=PILE_TEST_MAP[pid]||null;
+        const pR=isPaired?7:(p.dia===1.2?7:9);
+        const off=layout[pi]||[0,0];
+        const px=xSub+off[0]; const py=PLAN_Y+off[1];
+        const fill=isDone?C_DONE:'#f1f5f9'; const str=isDone?'#15803d':'#94a3b8';
+        if(tt){const rs=tt==='sonic'?'#f59e0b':tt==='dynamic'?'#ef4444':'#7c3aed'; svg+=`<circle cx="${px}" cy="${py}" r="${pR+3}" fill="none" stroke="${rs}" stroke-width="${tt==='dynamic'?2:1.5}" stroke-dasharray="${tt==='sonic'?'3 2':'none'}" />`;}
+        const eid=(ax+'_'+pid).replace(/[^a-zA-Z0-9_-]/g,'_');
+        svg+=`<circle id="pc_${eid}" data-pid="${pid}" data-ax="${ax}" cx="${px}" cy="${py}" r="${pR}" fill="${fill}" stroke="${str}" stroke-width="1.5" style="cursor:pointer" onclick="onPvCircleClick(event,this)"/>`;
+        svg+=`<text x="${px}" y="${py+3}" text-anchor="middle" font-size="6" fill="${isDone?'#fff':'#64748b'}" pointer-events="none">${pid.split('-').pop()}</text>`;
+        if(isDone){
+          const rec=records.filter(r=>r.category==='Bored Pile'&&(r.pile_id===pid||(r.location||'')===(group.baseKey))).sort((a,b)=>b.date.localeCompare(a.date))[0];
+          if(rec){const[yy,mm,dd]=rec.date.split('-'); svg+=`<text x="${px}" y="${py-pR-2}" text-anchor="middle" font-size="6" fill="#dc2626" pointer-events="none">${parseInt(dd)}/${parseInt(mm)}/${yy.slice(2)}</text>`;}
         }
       });
-    });
 
-    // Span label
-    if (d0.span) {
-      const midX = LEFT_PAD + (group.sta - staStart + d0.span/2)*pxPerM;
-      svg += `<text x="${midX.toFixed(1)}" y="${HEADER_H+AX_LBL_H+PILE_H+14}" text-anchor="middle" font-size="8" fill="#94a3b8">${d0.span.toFixed(1)}</text>`;
-    }
-    // Portal Frame indicator
-    if (d0.portal) {
-      svg += `<text x="${x}" y="${HEADER_H+2}" text-anchor="middle" font-size="7.5" fill="#7c3aed" font-weight="600">PF</text>`;
-    }
-  });
+      // LT/RT label บนหัว
+      if (isPaired) {
+        const side = ax.endsWith('-LT')||ax.endsWith('-L') ? 'LT' : 'RT';
+        svg += `<text x="${xSub}" y="${Y_COL_TOP-3}" text-anchor="middle" font-size="7" font-weight="800" fill="${colRec?'#1e40af':'#64748b'}">${side}</text>`;
+      }
+
+      // ปิด group translate
+      if (yOff > 0) svg += `</g>`;
+    }); // end subAxes
+
+    // Pier label ใต้ group (วาง row 1 เสมอ ไม่ขึ้นกับ offset)
+    let lblText = group.baseKey.replace('P03-','Pier ').replace('ST-P-','STP ');
+    const lblW  = isPaired ? 48 : 48;
+    const lblY  = isPaired ? Y_LBL + pairRowOffset : Y_LBL;
+    svg += `<rect x="${(x-lblW/2).toFixed(1)}" y="${lblY-11}" width="${lblW}" height="13" rx="4" fill="#f1f5f9"/>`;
+    svg += `<text x="${x}" y="${lblY}" text-anchor="middle" font-size="7.5" font-weight="700" fill="#334155">${lblText}</text>`;
+  }); // end visible.forEach
 
   svg += '</svg>';
   document.getElementById('pv-canvas').innerHTML = svg;
-  renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW);
+  renderPvPanels();
+}
+
+
+function renderPvPanels() {
+  // ดึง visible groups จาก pvState ปัจจุบัน
+  const groups  = getPvAxisGroups();
+  const fromIdx = pvState.from;
+  const toIdx   = pvState.to;
+  const visible = groups.slice(Math.min(fromIdx,toIdx), Math.max(fromIdx,toIdx)+1);
+  if (!visible.length) return;
+  const staStart = visible[0].sta;
+  const pxPerM   = 1.8 * PV_FIXED_SCALE;
+  const LEFT_PAD = 60;
+  const totalW   = LEFT_PAD + (visible[visible.length-1].sta - staStart + 40)*pxPerM + 60;
+
+  if (pvPanels.bp)  renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW, 'bp');
+  if (pvPanels.ft)  renderPvFtPanel(visible, staStart, pxPerM, LEFT_PAD, totalW);
+  if (pvPanels.col) renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW);
+}
+
+
+// ─── Plan View panel toggle state ─────────────────────────────────────────
+const pvPanels = { bp: false, ft: false, col: false };
+
+function pvTogglePanel(panel) {
+  pvPanels[panel] = !pvPanels[panel];
+  const btn = document.getElementById('toggle-'+panel);
+  const strip = document.getElementById('pv-strip-'+panel);
+  if (!btn || !strip) return;
+
+  const colors = {
+    bp:  { on:'background:#dcfce7;color:#166534;border-color:#86efac', off:'background:#f1f5f9;color:#64748b;border-color:#cbd5e1' },
+    ft:  { on:'background:#d1fae5;color:#065f46;border-color:#6ee7b7', off:'background:#f1f5f9;color:#64748b;border-color:#cbd5e1' },
+    col: { on:'background:#dbeafe;color:#1e40af;border-color:#93c5fd', off:'background:#f1f5f9;color:#64748b;border-color:#cbd5e1' },
+  };
+  btn.style.cssText = pvPanels[panel] ? colors[panel].on : colors[panel].off;
+  strip.classList.toggle('hidden', !pvPanels[panel]);
+
+  // ถ้า panel เปิดและยังว่างอยู่ ให้ render
+  if (pvPanels[panel] && !strip.innerHTML.trim()) {
+    renderPvPanels();
+  }
 }
 
 // ─── Plan View Detail Table (per axis, aligned with SVG) ──────────────────────
-function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW) {
-  const strip = document.getElementById('pv-detail-strip');
+function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW, panelId='bp') {
+  const strip = document.getElementById('pv-strip-'+(panelId||'bp'));
   if (!strip) return;
   strip.style.width    = totalW + 'px';
   strip.style.position = 'relative';
@@ -2921,15 +3711,21 @@ function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW) {
 
   visible.forEach(group => {
     const gx = LEFT_PAD + (group.sta - staStart) * pxPerM;
-    const allPiles = [];
-    group.axes.forEach(ax => {
-      (AXIS_PLAN[ax]?.piles || []).forEach(p => allPiles.push(p));
-    });
-    if (!allPiles.length) return;
+    const PAIR_GAP = 28;
+    const isPaired = group.isPaired;
 
-    const d0 = AXIS_PLAN[group.axes[0]] || {};
-    const dia = d0.dia || '—';
-    const isStaticTest = group.axes.some(ax => ax.includes('Static Test'));
+    // สร้าง card แยกต่อ axis (LT/RT แยกกัน)
+    group.axes.forEach((ax, si) => {
+      const axData   = AXIS_PLAN[ax] || {};
+      const allPiles = axData.piles || [];
+      if (!allPiles.length) return;
+
+      const dia = axData.dia || '—';
+      const isStaticTest = ax.includes('Static Test');
+
+      // x position: paired → offset LT ซ้าย / RT ขวา
+      const axOffset = isPaired ? (si === 0 ? -PAIR_GAP : PAIR_GAP) : 0;
+      const gxAx = gx + axOffset;
 
     let totalSoil = 0, totalRock = 0;
     let firstDate = null, lastDate = null;
@@ -2988,15 +3784,18 @@ function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW) {
     const headerColor = isStaticTest ? '#7c3aed' : '#1e40af';
     const cardH = HEADER_H + allPiles.length * ROW_H_UNIT + FOOTER_H;
 
+    // label: P03-62-LT → "P03-62-LT", ST-P-01-L → "ST-P-01 L"
+    const axLabel = ax;
+
     cards.push({
-      group, gx, isStaticTest, dia, headerColor,
+      group, ax, axLabel, gxAx, isStaticTest, dia, headerColor,
       allPiles, pileRows, gtRow, hasAny,
       totalSoil, totalRock, cardH,
-      left: Math.max(0, gx - TABLE_W/2),
-      isStaticTest,
+      left: Math.max(0, gxAx - TABLE_W/2),
       row: 0
     });
-  });
+    }); // end group.axes.forEach
+  }); // end visible.forEach
 
   // ── Overlap detection: assign rows ──────────────────────────────────────
   cards.sort((a,b) => a.left - b.left);
@@ -3039,7 +3838,7 @@ function renderPvDetailTable(visible, staStart, pxPerM, LEFT_PAD, totalW) {
     const topPx = rowTops[card.row];
     html += `<div style="position:absolute;left:${card.left.toFixed(0)}px;top:${topPx}px;width:${TABLE_W}px">
       <div style="background:${card.headerColor};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:space-between;gap:4px">
-        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${card.group.baseKey}</span>
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${card.axLabel}</span>
         <span style="white-space:nowrap;opacity:0.85">Ø${card.dia}m</span>
       </div>
       <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 4px 4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
@@ -3308,6 +4107,133 @@ updateDashboard();
 lucide.createIcons();
 // Pull latest from Sheet silently, then auto-refresh every 30s
 gasPull().then(() => startAutoSync());
+
+// ─── Footing Panel ────────────────────────────────────────────────────────────
+function renderPvFtPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
+  const strip = document.getElementById('pv-strip-ft');
+  if (!strip) return;
+  strip.style.width    = totalW + 'px';
+  strip.style.position = 'relative';
+
+  const CARD_W   = 120;
+  const PAIR_GAP = 28;
+  const PAD_TOP  = 6;
+
+  const fmtD = ds => { if(!ds||ds==='-') return '-'; const[y,m,d]=ds.split('-'); return parseInt(d)+'/'+parseInt(m)+'/'+y.slice(2); };
+
+  // build cards per axis
+  const cards = [];
+  visible.forEach(group => {
+    const gx = LEFT_PAD + (group.sta - staStart)*pxPerM;
+    const isPaired = group.isPaired;
+    group.axes.forEach((ax, si) => {
+      const d0 = AXIS_PLAN[ax] || {};
+      if (!d0.footing) return;
+      const xOff = isPaired ? (si===0 ? -PAIR_GAP : PAIR_GAP) : 0;
+      const gxAx = gx + xOff;
+      const ftRec = records.find(r => r.item_id && r.item_id.startsWith('ft-') &&
+        (r.location===ax||(r.location||'').includes(ax)||(r.pile_id||'').includes(ax)));
+      cards.push({ ax, gxAx, d0, ftRec, isPaired });
+    });
+  });
+
+  // overlap → rows (same logic as BP)
+  const rowEnds = {};
+  cards.forEach(c => {
+    c.left = Math.max(0, c.gxAx - CARD_W/2);
+    const right = c.left + CARD_W + 6;
+    for (let row=0; row<=5; row++) {
+      if (c.left >= (rowEnds[row]||0)) { c.row=row; rowEnds[row]=right; break; }
+    }
+    if (c.row==null) c.row=5;
+  });
+
+  const CARD_H = 68;
+  const maxRow = Math.max(...cards.map(c=>c.row));
+  const totalH = PAD_TOP + (maxRow+1)*(CARD_H+6);
+  strip.style.height = totalH+'px';
+
+  let html = '<div style="position:relative;height:'+totalH+'px">';
+  cards.forEach(c => {
+    const done = !!c.ftRec;
+    const topPx = PAD_TOP + c.row*(CARD_H+6);
+    const hdrBg = done ? '#16a34a' : '#94a3b8';
+    const bodyBg= done ? '#dcfce7' : '#f8fafc';
+    const lbl   = c.ax.replace('P03-','').replace('ST-P-','STP-');
+    html += '<div style="position:absolute;left:'+c.left.toFixed(0)+'px;top:'+topPx+'px;width:'+CARD_W+'px;border-radius:6px;overflow:hidden;font-size:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">'
+      +'<div style="background:'+hdrBg+';color:#fff;padding:2px 6px;font-weight:700;font-size:10px;display:flex;justify-content:space-between">'
+      +'<span>'+lbl+'</span><span style="opacity:0.8;font-weight:400">'+c.d0.footing+'</span></div>'
+      +'<div style="background:'+bodyBg+';padding:4px 6px">'
+      +'<div style="color:#475569">สถานะ: <b style="color:'+(done?'#166534':'#94a3b8')+'">'+(done?'✓ แล้วเสร็จ':'— ยังไม่ทำ')+'</b></div>'
+      +(c.ftRec ? '<div style="color:#475569;font-size:9px">วันที่: <b>'+fmtD(c.ftRec.date)+'</b></div>'
+                 +'<div style="color:#f59e0b;font-size:9px">ม³: <b>'+(c.ftRec.concrete_volume?c.ftRec.concrete_volume.toFixed(1)+' ม³':'-')+'</b></div>' : '')
+      +'</div></div>';
+  });
+  html += '</div>';
+  strip.innerHTML = html;
+}
+
+function renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
+  const strip = document.getElementById('pv-strip-col');
+  if (!strip) return;
+  strip.style.width    = totalW + 'px';
+  strip.style.position = 'relative';
+
+  const CARD_W   = 120;
+  const PAIR_GAP = 28;
+  const PAD_TOP  = 6;
+
+  const fmtD = ds => { if(!ds||ds==='-') return '-'; const[y,m,d]=ds.split('-'); return parseInt(d)+'/'+parseInt(m)+'/'+y.slice(2); };
+
+  const cards = [];
+  visible.forEach(group => {
+    const gx = LEFT_PAD + (group.sta - staStart)*pxPerM;
+    const isPaired = group.isPaired;
+    group.axes.forEach((ax, si) => {
+      const d0 = AXIS_PLAN[ax] || {};
+      if (!d0.column) return;
+      const xOff = isPaired ? (si===0 ? -PAIR_GAP : PAIR_GAP) : 0;
+      const gxAx = gx + xOff;
+      const colRec = records.find(r => r.item_id && r.item_id.startsWith('col-') &&
+        (r.location===ax||(r.location||'').includes(ax)||(r.pile_id||'').includes(ax)));
+      cards.push({ ax, gxAx, d0, colRec, isPaired });
+    });
+  });
+
+  const rowEnds = {};
+  cards.forEach(c => {
+    c.left = Math.max(0, c.gxAx - CARD_W/2);
+    const right = c.left + CARD_W + 6;
+    for (let row=0; row<=5; row++) {
+      if (c.left >= (rowEnds[row]||0)) { c.row=row; rowEnds[row]=right; break; }
+    }
+    if (c.row==null) c.row=5;
+  });
+
+  const CARD_H = 68;
+  const maxRow = Math.max(...cards.map(c=>c.row));
+  const totalH = PAD_TOP + (maxRow+1)*(CARD_H+6);
+  strip.style.height = totalH+'px';
+
+  let html = '<div style="position:relative;height:'+totalH+'px">';
+  cards.forEach(c => {
+    const done = !!c.colRec;
+    const topPx = PAD_TOP + c.row*(CARD_H+6);
+    const hdrBg = done ? '#2563eb' : '#94a3b8';
+    const bodyBg= done ? '#dbeafe' : '#f8fafc';
+    const lbl   = c.ax.replace('P03-','').replace('ST-P-','STP-');
+    html += '<div style="position:absolute;left:'+c.left.toFixed(0)+'px;top:'+topPx+'px;width:'+CARD_W+'px;border-radius:6px;overflow:hidden;font-size:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">'
+      +'<div style="background:'+hdrBg+';color:#fff;padding:2px 6px;font-weight:700;font-size:10px;display:flex;justify-content:space-between">'
+      +'<span>'+lbl+'</span><span style="opacity:0.8;font-weight:400">'+c.d0.column+'</span></div>'
+      +'<div style="background:'+bodyBg+';padding:4px 6px">'
+      +'<div style="color:#475569">สถานะ: <b style="color:'+(done?'#1e40af':'#94a3b8')+'">'+(done?'✓ แล้วเสร็จ':'— ยังไม่ทำ')+'</b></div>'
+      +(c.colRec ? '<div style="color:#475569;font-size:9px">วันที่: <b>'+fmtD(c.colRec.date)+'</b></div>'
+                  +'<div style="color:#f59e0b;font-size:9px">ม³: <b>'+(c.colRec.concrete_volume?c.colRec.concrete_volume.toFixed(1)+' ม³':'-')+'</b></div>' : '')
+      +'</div></div>';
+  });
+  html += '</div>';
+  strip.innerHTML = html;
+}
 
 </script>
 </body>
