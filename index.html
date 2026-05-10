@@ -1026,6 +1026,7 @@ const INVENTORY = [
 const PIN_RECORD = '9999';
 const PIN_DELETE = '3017';
 const STORAGE_KEY = 'railway_p03_records_v2';
+let records = [];  // global — ป้องกัน ReferenceError ก่อน GAS โหลด
 
 // ─── Master Plan Data (from Master_Plan_rev_0, 22-03-69) ──────────────────────
 // มูลค่างานรายหมวด (บาท) และ % แผน ณ เดือนปัจจุบัน (M6 มี.ค.69)
