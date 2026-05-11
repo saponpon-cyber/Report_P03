@@ -1165,15 +1165,17 @@ function toggleWip(pileId){
   if(wipPiles.has(pileId)) wipPiles.delete(pileId);
   else wipPiles.add(pileId);
   saveWip();
-  // Push WIP state ไป Google Sheets เพื่อให้ทุก device เห็น
   gasPush('wip_update', { wip: [...wipPiles] });
-  renderPlanView();
-  // อัปเดต popup ใหม่ (ถ้ายังเปิดอยู่)
-  const pop = document.getElementById('pv-tooltip');
-  if(!pop.classList.contains('hidden')){
-    const btn = document.getElementById('wip-btn');
-    if(btn) updateWipBtn(pileId);
-  }
+
+  // อัปเดตสี circle ใน SVG โดยไม่ต้อง re-render ทั้งหมด
+  const isWip = wipPiles.has(pileId);
+  document.querySelectorAll(`[data-pid="${pileId}"]`).forEach(el => {
+    el.style.fill   = isWip ? '#fde047' : '#f1f5f9';
+    el.style.stroke = isWip ? '#ca8a04' : '#94a3b8';
+  });
+
+  // อัปเดต popup button
+  updateWipBtn(pileId);
 }
 function updateWipBtn(pileId){
   const btn = document.getElementById('wip-btn');
@@ -3612,16 +3614,20 @@ function renderPlanView() {
       const LAYOUTS = {4:[[+sp,-sp],[+sp,+sp],[-sp,+sp],[-sp,-sp]],2:[[0,-sp],[0,+sp]],6:[[+sp,-sp],[+sp,0],[+sp,+sp],[-sp,+sp],[-sp,0],[-sp,-sp]]};
       const layout = LAYOUTS[allPiles.length] || LAYOUTS[4];
       allPiles.forEach((p, pi) => {
-        const pid=p.id; const isDone=pilesSet.has(pid);
+        const pid=p.id;
+        const isDone = pilesSet.has(pid);
+        const isWip  = wipPiles && wipPiles.has(pid);
         const tt=PILE_TEST_MAP[pid]||null;
         const pR=isPaired?7:(p.dia===1.2?7:9);
         const off=layout[pi]||[0,0];
         const px=xSub+off[0]; const py=PLAN_Y+off[1];
-        const fill=isDone?C_DONE:'#f1f5f9'; const str=isDone?'#15803d':'#94a3b8';
+        const fill = isDone ? C_DONE : isWip ? '#fde047' : '#f1f5f9';
+        const str  = isDone ? '#15803d' : isWip ? '#ca8a04' : '#94a3b8';
+        const strW = (isDone||isWip) ? 2 : 1;
         if(tt){const rs=tt==='sonic'?'#f59e0b':tt==='dynamic'?'#ef4444':'#7c3aed'; svg+=`<circle cx="${px}" cy="${py}" r="${pR+3}" fill="none" stroke="${rs}" stroke-width="${tt==='dynamic'?2:1.5}" stroke-dasharray="${tt==='sonic'?'3 2':'none'}" />`;}
         const eid=(ax+'_'+pid).replace(/[^a-zA-Z0-9_-]/g,'_');
-        svg+=`<circle id="pc_${eid}" data-pid="${pid}" data-ax="${ax}" cx="${px}" cy="${py}" r="${pR}" fill="${fill}" stroke="${str}" stroke-width="1.5" style="cursor:pointer" onclick="onPvCircleClick(event,this)"/>`;
-        svg+=`<text x="${px}" y="${py+3}" text-anchor="middle" font-size="6" fill="${isDone?'#fff':'#64748b'}" pointer-events="none">${pid.split('-').pop()}</text>`;
+        svg+=`<circle id="pc_${eid}" data-pid="${pid}" data-ax="${ax}" cx="${px}" cy="${py}" r="${pR}" fill="${fill}" stroke="${str}" stroke-width="${strW}" style="cursor:pointer" onclick="onPvCircleClick(event,this)"/>`;
+        svg+=`<text x="${px}" y="${py+3}" text-anchor="middle" font-size="6" fill="${isDone?'#fff':isWip?'#854d0e':'#64748b'}" pointer-events="none">${pid.split('-').pop()}</text>`;
         if(isDone){
           const rec=records.filter(r=>r.category==='Bored Pile'&&(r.pile_id===pid||(r.location||'')===(group.baseKey))).sort((a,b)=>b.date.localeCompare(a.date))[0];
           if(rec){const[yy,mm,dd]=rec.date.split('-'); svg+=`<text x="${px}" y="${py-pR-2}" text-anchor="middle" font-size="6" fill="#dc2626" pointer-events="none">${parseInt(dd)}/${parseInt(mm)}/${yy.slice(2)}</text>`;}
