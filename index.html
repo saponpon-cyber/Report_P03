@@ -3424,15 +3424,16 @@ function pvGoZone(zoneId){
   pvState.to    = newTo;
   pvState.ready = true;
 
-  // ตรวจว่าอยู่ใน Plan View tab แล้วหรือยัง
+  // init dropdown ก่อนเสมอ (สร้าง options + restore pvState)
+  initPvSelects();
+
+  // switch ไป Plan View tab (ถ้ายังไม่อยู่)
   const planView = document.getElementById('view-plan');
   const isOnPlan = planView && !planView.classList.contains('hidden');
-
   if (!isOnPlan) {
+    // switchTab จะเรียก initPvSelects+renderPlanView อีกครั้ง แต่ pvState.ready=true แล้ว
     switchTab('plan');
-    // switchTab เรียก initPvSelects+renderPlanView อยู่แล้ว pvState.ready=true จึงถูกต้อง
   } else {
-    initPvSelects();
     renderPlanView();
   }
 }
@@ -3596,7 +3597,8 @@ function renderPlanView() {
         // วงกลม pile (4 มุม + กลาง)
         allPilesS.forEach((p, pi) => {
           const isDone = pilesSet.has(p.id);
-          const isWip  = wipPiles && wipPiles.has(p.id);
+          const isWip  = wipPiles  && wipPiles.has(p.id);
+          const isConc = concPiles && concPiles.has(p.id);
           const off = sLayout[pi] || [0,0];
           const px = xSub + off[0]; const py = ST_CY + off[1];
           const fill   = isDone ? stColor : isConc ? '#f97316' : isWip ? '#fde047' : stColorBg;
