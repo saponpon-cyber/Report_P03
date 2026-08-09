@@ -1313,6 +1313,21 @@ function startAutoSync() {
 
 // ===================== HELPERS =====================
 function getCompleted(itemId){return records.filter(r=>r.item_id===itemId).reduce((s,r)=>s+(r.qty||0),0);}
+// นับเสาที่ "เสร็จ" = เทถึง Pier Head แล้ว (นับเป็น 1 ต้น) — legacy record ที่ไม่มีสเต็ปถือว่าเสร็จ
+function colHeadDoneCount(axKeys){
+  const done=new Set();
+  records.forEach(r=>{
+    if(r.item_id!=='col-col') return;
+    const isHead = r.pile_id==='head' || !(r.pile_id==='kicker'||r.pile_id==='shaft');
+    if(!isHead) return;
+    const loc=String(r.location||''); const nums=(loc.match(/\d+/g)||[]);
+    axKeys.forEach(ax=>{
+      const axNum=(ax.split('-')[1]||'').replace(/\D/g,'');
+      if(loc===ax||loc.includes(ax)||(axNum&&nums.includes(axNum))) done.add(ax);
+    });
+  });
+  return done.size;
+}
 function getPileDoneSet(){return new Set(records.filter(r=>r.pile_id).map(r=>r.pile_id));}
 function today(){return new Date().toISOString().split('T')[0];}
 function fmt(n,d=2){return n!=null&&n!==''?parseFloat(n).toFixed(d):'-';}
@@ -2202,7 +2217,7 @@ function renderProjectOverviewDash() {
     const bpD=pileIds.filter(id=>donePiles.has(id)).length; const bpT=pileIds.length;
     const ftD=ftRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
     const ftT=axKeys.length;
-    const cpD=colRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
+    const cpD=colHeadDoneCount(axKeys);
     const cpT=axKeys.length;
     totBpD+=bpD;totBpT+=bpT;totFtD+=ftD;totFtT+=ftT;totCpD+=cpD;totCpT+=cpT;
     const nPiers=new Set(axKeys.map(k=>k.replace(/-LT|-RT|-L|-R/g,''))).size;
@@ -2298,7 +2313,7 @@ function renderZoneCards(){
     const bpTotal = pileIds.length;
     const ftDone  = ftRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
     const ftTotal = axKeys.length;
-    const colDone = colRecs.filter(r=>axKeys.some(ax=>(r.location||'').includes(ax)||(r.pile_id||'').includes(ax))).length;
+    const colDone = colHeadDoneCount(axKeys);
     const colTotal= axKeys.length;
 
     const bpPct  = bpTotal  ? (bpDone/bpTotal*100)  : 0;
