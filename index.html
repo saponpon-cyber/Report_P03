@@ -312,6 +312,17 @@ th{position:sticky;top:0;z-index:2}
         <p id="r-loc-hint" class="hidden text-xs text-blue-500 mt-1">เลือก Pile ID ที่กำหนดให้ทดสอบ</p>
       </div>
 
+      <!-- Column concrete step (เฉพาะเสา) -->
+      <div id="col-step-wrap" class="hidden">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">ขั้นตอนการเทคอนกรีต (เสา)</label>
+        <select id="r-col-step" class="w-full px-3 py-3 border border-purple-300 rounded-xl text-sm bg-purple-50">
+          <option value="kicker">1. Kicker (ตีนเสา)</option>
+          <option value="shaft">2. Pier Shaft (ตัวเสา)</option>
+          <option value="head">3. Pier Head (หัวเสา)</option>
+        </select>
+        <p class="text-xs text-purple-500 mt-1">บันทึกทีละสเต็ปได้ • Pier Head = เสาเสร็จสมบูรณ์</p>
+      </div>
+
       <!-- Qty + Unit -->
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs font-semibold text-gray-600 mb-1">จำนวน</label>
@@ -2484,6 +2495,8 @@ function updateLocationInputMode(cat, itemId){
     locSelect.classList.add('hidden');
     locHint.classList.add('hidden');
   }
+  const csw=document.getElementById('col-step-wrap');
+  if(csw) csw.classList.toggle('hidden', !(cat==='Column / Crossbeam' && itemId==='col-col'));
 }
 
 function populateAxisSelect(){
@@ -2621,6 +2634,13 @@ function submitRecord(){
     created_at:new Date().toISOString()
   };
 
+  // Column: 3-step concrete pour (Kicker/Shaft/Head) — เก็บสเต็ปในฟิลด์ pile_id (sync ได้)
+  if(cat==='Column / Crossbeam' && itemId==='col-col'){
+    const step=(document.getElementById('r-col-step')||{}).value||'kicker';
+    rec.pile_id=step;
+    rec.qty = step==='head' ? 1 : 0; // นับเสาเสร็จเฉพาะ Pier Head
+  }
+
   records.push(rec);
   saveRecords();
   updateDashboard();
@@ -2647,6 +2667,8 @@ function submitRecord(){
   document.getElementById('r-remarks').value='';
   document.getElementById('r-pin').value='';
   document.getElementById('r-axis').value='';
+  { const _cs=document.getElementById('r-col-step'); if(_cs)_cs.value='kicker';
+    const _csw=document.getElementById('col-step-wrap'); if(_csw)_csw.classList.add('hidden'); }
   document.getElementById('r-pile-id').innerHTML='<option value="">-- เลือก AXIS ก่อน --</option>';
   document.getElementById('r-pile-id').disabled=true;
   document.getElementById('bp-fields').classList.add('hidden');
@@ -2862,6 +2884,15 @@ function renderCalendar(){
   const daysInMo=new Date(yr,mo+1,0).getDate();
   let html='';
   for(let i=0;i<firstDow;i++)html+='<div class="min-h-24 bg-gray-50 rounded-xl"></div>';
+  // สีประจำหมวดงาน (ตรงกับหน้าประวัติ)
+  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700'};
+  const evtLabel=(r)=>{ let name=r.category, pos='';
+    if(r.category==='Column / Crossbeam'){ name=(r.item_id==='col-col')?'Column':'Crossbeam';
+      pos=(r.location&&r.location!=='-')?r.location:''; }
+    else if(r.category==='Bored Pile'){ pos=r.pile_id || (r.location||''); }
+    else { pos=(r.location&&r.location!=='-')?r.location:''; }
+    pos=String(pos).replace(/\s*STA.*$/i,'').trim(); // ตัดส่วน STA... ออก
+    return pos ? (name+' '+pos) : name; };
   for(let d=1;d<=daysInMo;d++){
     const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dayRecs=records.filter(r=>r.date===ds);
@@ -2869,7 +2900,7 @@ function renderCalendar(){
     html+=`<div class="min-h-24 rounded-xl border ${isToday?'border-blue-500 border-2':'border-gray-200'} p-1.5 cursor-pointer hover:shadow-md transition ${dayRecs.length?'bg-blue-50':'bg-white'}" onclick="showDayModal('${ds}')">
       <div class="text-sm font-bold ${isToday?'text-blue-600':'text-gray-700'} mb-1">${d}</div>
       <div class="space-y-0.5 overflow-hidden">
-        ${dayRecs.slice(0,3).map(r=>`<div class="text-xs px-1 py-0.5 rounded bg-blue-200 text-blue-800 truncate font-medium">${r.category}</div>`).join('')}
+        ${dayRecs.slice(0,3).map(r=>`<div class="text-xs px-1 py-0.5 rounded ${catColors[r.category]||'bg-gray-100 text-gray-700'} truncate font-medium" title="${evtLabel(r)}">${evtLabel(r)}</div>`).join('')}
         ${dayRecs.length>3?`<div class="text-xs text-blue-500 font-semibold">+${dayRecs.length-3} อื่นๆ</div>`:''}
       </div>
     </div>`;
@@ -3628,24 +3659,41 @@ function renderPlanView() {
 
       const ftRec  = records.find(r => r.item_id && r.item_id.startsWith('ft-') &&
         (r.location===ax||(r.location||'').includes(ax)||(r.pile_id||'').includes(ax)));
-      const colRec = records.find(r => r.item_id && r.item_id.startsWith('col-') &&
-        (r.location===ax||(r.location||'').includes(ax)||(r.pile_id||'').includes(ax)));
+      // เสา 3 สเต็ป (Kicker/Shaft/Head) — จับคู่ตำแหน่งแบบยืดหยุ่น (P187 = P03-187)
+      const _axNumC = (ax.split('-')[1]||'').replace(/\D/g,'');
+      const _locHitCol = (loc) => { loc=(loc||'').trim(); if(!loc) return false;
+        if(loc===ax||loc.includes(ax)) return true;
+        return !!_axNumC && (loc.match(/\d+/g)||[]).includes(_axNumC); };
+      const colSteps = {head:false,shaft:false,kicker:false};
+      records.forEach(r => { if(r.item_id!=='col-col') return; if(!_locHitCol(r.location)) return;
+        const st=(r.pile_id==='head'||r.pile_id==='shaft'||r.pile_id==='kicker')?r.pile_id:'head'; colSteps[st]=true; });
+      const colRec = colSteps.head||colSteps.shaft||colSteps.kicker;
       const allPiles   = d0.piles || [];
       const donePiles  = allPiles.filter(p => pilesSet.has(p.id));
       const pileDone   = donePiles.length===allPiles.length && allPiles.length>0;
       const pilePartial= donePiles.length>0 && donePiles.length<allPiles.length;
 
       const C_DONE='#16a34a'; const C_PART='#f59e0b'; const C_NONE='#cbd5e1';
-      const colFill = colRec ? '#2563eb' : C_NONE;
       const ftFill  = ftRec  ? C_DONE   : C_NONE;
 
-      // Column (taper+shaft)
-      const nw = isPaired ? 20 : 38;
-      const cw = 10; const nh = 14; const sh = COL_H-nh;
-      const YNT = Y_COL_TOP; const YNB = YNT+nh;
-      svg += `<polygon points="${(xSub-nw/2).toFixed(1)},${YNT} ${(xSub+nw/2).toFixed(1)},${YNT} ${(xSub+cw/2).toFixed(1)},${YNB} ${(xSub-cw/2).toFixed(1)},${YNB}" fill="${colFill}" stroke="#334155" stroke-width="1.2"/>`;
-      svg += `<rect x="${(xSub-cw/2).toFixed(1)}" y="${YNB}" width="${cw}" height="${sh}" rx="1" fill="${colFill}" stroke="#334155" stroke-width="1.2"/>`;
-      if (colRec) svg += `<text x="${xSub}" y="${(YNB+sh/2+3).toFixed(1)}" text-anchor="middle" font-size="6" font-weight="700" fill="#fff">COL</text>`;
+      // Column 3 สเต็ป: Pier Head (บน) / Pier Shaft (กลาง) / Kicker (ล่าง ติด footing)
+      // สีตามรูป: Head=เขียว, Shaft=เขียว, Kicker=น้ำเงิน, ยังไม่ทำ=เทา
+      // กติกา: เท Pier Shaft = เท Kicker พร้อมกัน → น้ำเงิน ; Pier Head → เขียว
+      const _headDone  = colSteps.head;
+      const _shaftDone = colSteps.shaft;
+      const _kickDone  = colSteps.kicker || colSteps.shaft;
+      const cHead  = _headDone  ? '#16a34a' : C_NONE;
+      const cShaft = _shaftDone ? '#1d4ed8' : C_NONE;
+      const cKick  = _kickDone  ? '#1d4ed8' : C_NONE;
+      const headTopW = isPaired ? 20 : 38;
+      const shaftW   = isPaired ? 10 : 16;
+      const kickW    = shaftW;   // ให้ขอบลำเสาตรงกัน
+      const headH = 14, shaftH = 20, kickH = COL_H - 14 - 20;
+      const yH0 = Y_COL_TOP, yH1 = yH0+headH, yS0 = yH1, yS1 = yS0+shaftH, yK0 = yS1;
+      svg += `<polygon points="${(xSub-headTopW/2).toFixed(1)},${yH0} ${(xSub+headTopW/2).toFixed(1)},${yH0} ${(xSub+shaftW/2).toFixed(1)},${yH1} ${(xSub-shaftW/2).toFixed(1)},${yH1}" fill="${cHead}" stroke="#334155" stroke-width="1.2"/>`;
+      svg += `<rect x="${(xSub-shaftW/2).toFixed(1)}" y="${yS0}" width="${shaftW}" height="${shaftH}" fill="${cShaft}" stroke="#334155" stroke-width="1.2"/>`;
+      svg += `<rect x="${(xSub-kickW/2).toFixed(1)}" y="${yK0}" width="${kickW}" height="${kickH}" fill="${cKick}" stroke="#334155" stroke-width="1.2"/>`;
+      if (colRec) svg += `<text x="${xSub}" y="${(yS0+shaftH/2+3).toFixed(1)}" text-anchor="middle" font-size="5.5" font-weight="700" fill="${colSteps.shaft?'#fff':'#475569'}">COL</text>`;
 
       // Footing
       const fw = isPaired ? 28 : FTG_W;
@@ -4004,6 +4052,19 @@ function pvGoRecord(pileId, axis){
   },60);
 }
 
+function pvGoColStep(ax, step){
+  if(typeof hidePvPopup==='function') hidePvPopup();
+  switchTab('record');
+  document.getElementById('r-cat').value='Column / Crossbeam';
+  onCatChange();
+  const it=document.getElementById('r-item'); if(it){ it.value='col-col'; onItemChange(); }
+  const loc=document.getElementById('r-loc'); if(loc) loc.value=ax;
+  const cs=document.getElementById('r-col-step'); if(cs) cs.value=step;
+  const csw=document.getElementById('col-step-wrap'); if(csw) csw.classList.remove('hidden');
+  showToast('เลือกเสา '+ax.replace('P03-','')+' • '+({head:'Pier Head',shaft:'Pier Shaft',kicker:'Kicker'}[step]||step),'green');
+  if(loc) loc.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
 document.addEventListener('click',e=>{
   const pop=document.getElementById('pv-tooltip');
   if(_pvPopupOpen&&pop&&!pop.contains(e.target)) hidePvPopup();
@@ -4239,8 +4300,17 @@ function renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
   const CARD_W   = 120;
   const PAIR_GAP = 28;
   const PAD_TOP  = 6;
+  const CARD_H   = 120;
 
   const fmtD = ds => { if(!ds||ds==='-') return '-'; const[y,m,d]=ds.split('-'); return parseInt(d)+'/'+parseInt(m)+'/'+y.slice(2); };
+  const STEP_KEYS=['head','shaft','kicker'];
+  const STEP_LBL={head:'Pier Head',shaft:'Pier Shaft',kicker:'Kicker'};
+  // สีตามรูป: Kicker = น้ำเงิน, Pier Shaft / Pier Head = เขียว
+  const COLORS={
+    head  :{fill:'#16a34a',stroke:'#15803d'},
+    shaft :{fill:'#1d4ed8',stroke:'#1e3a8a'},
+    kicker:{fill:'#1d4ed8',stroke:'#1e3a8a'}
+  };
 
   const cards = [];
   visible.forEach(group => {
@@ -4251,9 +4321,20 @@ function renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
       if (!d0.column) return;
       const xOff = isPaired ? (si===0 ? -PAIR_GAP : PAIR_GAP) : 0;
       const gxAx = gx + xOff;
-      const colRec = records.find(r => r.item_id && r.item_id.startsWith('col-') &&
-        (r.location===ax||(r.location||'').includes(ax)||(r.pile_id||'').includes(ax)));
-      cards.push({ ax, gxAx, d0, colRec, isPaired });
+      // เฉพาะ record ของเสา (col-col) ที่ตำแหน่งตรงกันเท่านั้น — ไฮไลต์เฉพาะสเต็ปที่บันทึกจริง
+      const _axNum = (ax.split('-')[1]||'').replace(/\D/g,'');
+      const recsHere = records.filter(r => { if(r.item_id!=='col-col') return false;
+        const loc=(r.location||'').trim(); if(!loc) return false;
+        if(loc===ax||loc.includes(ax)) return true;
+        return !!_axNum && (loc.match(/\d+/g)||[]).includes(_axNum); });
+      const steps={head:null,shaft:null,kicker:null};
+      recsHere.forEach(r=>{
+        // record เก่าที่ไม่มีสเต็ป → นับเป็น Pier Head (ถือว่าเสาเสร็จ/คิดมูลค่าแล้ว)
+        const st=(r.pile_id==='head'||r.pile_id==='shaft'||r.pile_id==='kicker')?r.pile_id:'head';
+        if(!steps[st]) steps[st]=r;
+      });
+      if(steps.shaft && !steps.kicker) steps.kicker=steps.shaft; // เท Shaft = เท Kicker พร้อมกัน
+      cards.push({ ax, gxAx, d0, steps });
     });
   });
 
@@ -4261,31 +4342,46 @@ function renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
   cards.forEach(c => {
     c.left = Math.max(0, c.gxAx - CARD_W/2);
     const right = c.left + CARD_W + 6;
-    for (let row=0; row<=5; row++) {
+    for (let row=0; row<=6; row++) {
       if (c.left >= (rowEnds[row]||0)) { c.row=row; rowEnds[row]=right; break; }
     }
-    if (c.row==null) c.row=5;
+    if (c.row==null) c.row=6;
   });
 
-  const CARD_H = 68;
-  const maxRow = Math.max(...cards.map(c=>c.row));
+  const maxRow = cards.length ? Math.max(...cards.map(c=>c.row)) : 0;
   const totalH = PAD_TOP + (maxRow+1)*(CARD_H+6);
   strip.style.height = totalH+'px';
 
+  const seg=(c,key,wPct,shape)=>{
+    const r=c.steps[key];
+    const done=!!r;
+    const cc=COLORS[key];
+    const bg  = done ? cc.fill   : '#e2e8f0';
+    const bd  = done ? cc.stroke : '#cbd5e1';
+    const col = done ? '#ffffff' : '#94a3b8';
+    const clip= shape==='trap' ? 'clip-path:polygon(0 0,100% 0,82% 100%,18% 100%);' : '';
+    const dt  = (done && r.date) ? fmtD(r.date) : '';
+    const tip = STEP_LBL[key]+(dt?(' • '+dt):'')+(done?' ✓':' (ยังไม่ทำ)');
+    return '<div onclick="pvGoColStep(\''+c.ax+'\',\''+key+'\')" title="'+tip+'" style="cursor:pointer;width:100%;display:flex;flex-direction:column;align-items:center">'
+      +'<div style="width:'+wPct+'%;height:15px;background:'+bg+';border:1px solid '+bd+';border-radius:2px;'+clip+'display:flex;align-items:center;justify-content:center;color:'+col+';font-size:8px;font-weight:700;line-height:1">'+STEP_LBL[key]+'</div>'
+      +'<div style="font-size:8px;font-weight:600;color:'+(done?'#334155':'#cbd5e1')+';line-height:1.1;margin-top:1px;height:9px">'+(dt||'—')+'</div>'
+      +'</div>';
+  };
+
   let html = '<div style="position:relative;height:'+totalH+'px">';
   cards.forEach(c => {
-    const done = !!c.colRec;
+    const nDone=STEP_KEYS.filter(k=>c.steps[k]).length;
     const topPx = PAD_TOP + c.row*(CARD_H+6);
-    const hdrBg = done ? '#2563eb' : '#94a3b8';
-    const bodyBg= done ? '#dbeafe' : '#f8fafc';
+    const hdrBg = nDone===3 ? '#15803d' : (nDone>0 ? '#7c3aed' : '#94a3b8');
     const lbl   = c.ax.replace('P03-','').replace('ST-P-','STP-');
-    html += '<div style="position:absolute;left:'+c.left.toFixed(0)+'px;top:'+topPx+'px;width:'+CARD_W+'px;border-radius:6px;overflow:hidden;font-size:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">'
+    html += '<div style="position:absolute;left:'+c.left.toFixed(0)+'px;top:'+topPx+'px;width:'+CARD_W+'px;border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);background:#fff">'
       +'<div style="background:'+hdrBg+';color:#fff;padding:2px 6px;font-weight:700;font-size:10px;display:flex;justify-content:space-between">'
-      +'<span>'+lbl+'</span><span style="opacity:0.8;font-weight:400">'+c.d0.column+'</span></div>'
-      +'<div style="background:'+bodyBg+';padding:4px 6px">'
-      +'<div style="color:#475569">สถานะ: <b style="color:'+(done?'#1e40af':'#94a3b8')+'">'+(done?'✓ แล้วเสร็จ':'— ยังไม่ทำ')+'</b></div>'
-      +(c.colRec ? '<div style="color:#475569;font-size:9px">วันที่: <b>'+fmtD(c.colRec.date)+'</b></div>'
-                  +'<div style="color:#f59e0b;font-size:9px">ม³: <b>'+(c.colRec.concrete_volume?c.colRec.concrete_volume.toFixed(1)+' ม³':'-')+'</b></div>' : '')
+      +'<span>'+lbl+'</span><span style="opacity:0.85;font-weight:600">'+nDone+'/3</span></div>'
+      +'<div style="padding:4px 6px 6px;display:flex;flex-direction:column;align-items:center;gap:2px">'
+      +seg(c,'head',96,'trap')
+      +seg(c,'shaft',66,'rect')
+      +seg(c,'kicker',52,'rect')
+      +'<div style="font-size:8px;color:#94a3b8;margin-top:1px">'+(c.d0.column||'')+'</div>'
       +'</div></div>';
   });
   html += '</div>';
