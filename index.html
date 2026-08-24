@@ -627,6 +627,10 @@ th{position:sticky;top:0;z-index:2}
         🔵 Column
       </button>
     </div>
+    <!-- Export PDF board -->
+    <button onclick="exportPlanBoard()" class="text-xs px-2.5 py-0.5 rounded-md font-bold border transition ml-2"
+      style="background:#0f2d5a;color:#fff;border-color:#0f2d5a">⬇ Export PDF
+    </button>
     <!-- Legend -->
     <div class="flex items-center gap-2 ml-auto text-xs flex-wrap">
       <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>แล้วเสร็จ</span>
@@ -3413,6 +3417,7 @@ const PV_ZONES = {
 
 let _pvActiveZone = null;
 let pvFitMode = false;
+let pvBigLabels = false; // ขยายป้ายเลข Pier ตอน export PDF
 
 function pvToggleFit() {
   pvFitMode = !pvFitMode;
@@ -3524,6 +3529,127 @@ function onPvScaleChange() {
   // Scale ถูกล็อคที่ 5.5x
 }
 
+function exportPlanBoard(){
+  try{
+    const groups=getPvAxisGroups();
+    if(!groups.length){showToast('ไม่มีข้อมูลแปลน','red');return;}
+    const num=k=>parseInt(String(k).replace(/\D/g,''));
+    const findIdx=(key,fb)=>{ if(!key)return fb; let i=groups.findIndex(g=>g.baseKey===key); if(i>=0)return i;
+      const n=num(key); if(isNaN(n))return fb; let best=fb,bd=1e9;
+      groups.forEach((g,gi)=>{const gn=num(g.baseKey); if(!isNaN(gn)&&Math.abs(gn-n)<bd){bd=Math.abs(gn-n);best=gi;}}); return best; };
+    const pilesSet=getPileDoneSet();
+    const ftMatch=(ax)=>{ const axN=(ax.split('-')[1]||'').replace(/\D/g,'');
+      return records.some(r=>{ if(!(r.item_id&&r.item_id.startsWith('ft-')))return false; const loc=String(r.location||''); if(!loc)return false;
+        if(loc===ax||loc.includes(ax))return true; return !!axN&&(loc.match(/\d+/g)||[]).includes(axN); }); };
+    // 6 แถว (แยก C เป็น C-1/C-2) — แต่ละโซนยืดเต็มความกว้างของแถว
+    const ZDEF=[
+      {id:'A', letter:'A', label:'Zone A',   color:'#16a34a', fromKey:'P03-165', toKey:'P03-189'},
+      {id:'B', letter:'B', label:'Zone B',   color:'#0284c7', fromKey:'P03-130', toKey:'P03-164'},
+      {id:'C1',letter:'C', label:'Zone C-1', color:'#d97706', fromKey:'P03-66',  toKey:'P03-99'},
+      {id:'C2',letter:'C', label:'Zone C-2', color:'#d97706', fromKey:'P03-100', toKey:'P03-129'},
+      {id:'D', letter:'D', label:'Zone D',   color:'#7c3aed', fromKey:'ST-P-01', toKey:'ST-P-18'},
+      {id:'E', letter:'E', label:'Zone E',   color:'#dc2626', fromKey:'P03-40',  toKey:'P03-65'}
+    ];
+    const fromSel=document.getElementById('pv-from'), toSel=document.getElementById('pv-to');
+    if(!fromSel.options.length) initPvSelects();
+    const saveFrom=fromSel.value, saveTo=toSel.value, saveFit=pvFitMode;
+    pvFitMode=false; pvBigLabels=true;
+    const ensureVB=(svg)=>{ const head=svg.slice(0,svg.indexOf('>')); const m=svg.match(/width="([\d.]+)"[^>]*height="([\d.]+)"/);
+      const w=m?+m[1]:1000, h=m?+m[2]:240;
+      if(m && !/viewBox=/.test(head)) svg=svg.replace('<svg','<svg preserveAspectRatio="xMinYMid meet" viewBox="0 0 '+m[1]+' '+m[2]+'"'); return {svg:svg,w:w,h:h}; };
+    const zones=ZDEF.map(zd=>{
+      const fi=findIdx(zd.fromKey,0), ti=findIdx(zd.toKey,groups.length-1);
+      const from=Math.min(fi,ti), to=Math.max(fi,ti);
+      fromSel.value=from; toSel.value=to; renderPlanView();
+      const vb=ensureVB(document.getElementById('pv-canvas').innerHTML);
+      const visible=groups.slice(from,to+1);
+      const axKeys=[]; let pileT=0,pileD=0,ftT=0,ftD=0,colT=0;
+      visible.forEach(g=>g.axes.forEach(ax=>{ axKeys.push(ax); const d=AXIS_PLAN[ax]||{}; const ps=d.piles||[];
+        pileT+=ps.length; pileD+=ps.filter(p=>pilesSet.has(p.id)).length;
+        if(d.footing){ftT++; if(ftMatch(ax))ftD++;} if(d.column)colT++; }));
+      const colD=colHeadDoneCount(axKeys);
+      const paired=visible.some(g=>g.isPaired);
+      const first=(visible[0]||{}).baseKey||'', last=(visible[visible.length-1]||{}).baseKey||'';
+      return Object.assign({},zd,{range:first+' – '+last,axes:visible.length,paired:paired,svg:vb.svg,svgW:vb.w,svgH:vb.h,pileT,pileD,ftT,ftD,colT,colD});
+    });
+    pvBigLabels=false; pvFitMode=saveFit; fromSel.value=saveFrom; toSel.value=saveTo; renderPlanView();
+    // ความสูงช่อง: โซนแถวเดียว = 1 หน่วย, โซน 2 บรรทัด = 2 หน่วย (เสายืดเต็มช่อง = ใหญ่ขึ้น)
+    const AVAIL_H_MM=256;
+    const units=zones.reduce((a,z)=>a+(z.paired?2:1),0);
+    const Hunit=AVAIL_H_MM/units;
+    zones.forEach(z=>{ z.cellmm=((z.paired?2:1)*Hunit).toFixed(2); });
+
+    const logos=Array.prototype.slice.call(document.querySelectorAll('header img')).map(im=>im.src).filter(Boolean);
+    const today=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+    const sumRow=(n,t,d)=>'<tr><td>'+n+'</td><td>'+t+'</td><td class="d">'+d+'</td><td class="r">'+Math.max(0,t-d)+'</td></tr>';
+    const zoneHTML=zones.map(z=>''
+      +'<div class="zrow" style="height:'+z.cellmm+'mm">'
+      +'<div class="zletter" style="background:'+z.color+'">'+z.letter+'</div>'
+      +'<div class="zinfo" style="border-color:'+z.color+'">'
+        +'<div class="zname" style="color:'+z.color+'">'+z.label+'</div>'
+        +'<div class="zr">'+z.range+'</div>'
+        +'<div>'+z.axes+' ต้น (axes)</div>'
+        +'<div>เข็ม '+z.pileT+' ต้น</div>'
+      +'</div>'
+      +'<div class="zplan">'+z.svg+'</div>'
+      +'<div class="zsum">'
+        +'<div class="sh" style="background:'+z.color+'">สรุปปริมาณงาน</div>'
+        +'<table><tr class="hd"><th>รายการ</th><th>ทั้งหมด</th><th>ทำแล้ว</th><th>เหลือ</th></tr>'
+        +sumRow('รวมเข็ม',z.pileT,z.pileD)
+        +sumRow('ฐานราก',z.ftT,z.ftD)
+        +sumRow('เสา (ถึง Pier Head)',z.colT,z.colD)
+        +'</table>'
+      +'</div>'
+      +'</div>').join('');
+    const css=`
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Sarabun','Tahoma','TH Sarabun New',sans-serif}
+@page{size:420mm 297mm;margin:6mm}
+html,body{width:420mm;height:297mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.board{display:flex;flex-direction:column;width:408mm;height:285mm}
+.hdr{display:flex;align-items:center;gap:5mm;height:26mm;border-bottom:1mm solid #0f2d5a;padding-bottom:1.5mm;flex:none}
+.logos{display:flex;gap:2.5mm;align-items:center}
+.logos img{height:11mm;width:auto;object-fit:contain}
+.tt{flex:1;text-align:center}
+.t1{font-size:7mm;font-weight:800;color:#0f2d5a;line-height:1.15}
+.t2{font-size:4mm;font-weight:600;color:#1d4ed8}
+.t3{font-size:2.6mm;color:#475569;margin-top:1mm}
+.zrow{display:flex;align-items:stretch;border-bottom:0.25mm solid #e2e8f0;overflow:hidden}
+.zrow:last-child{border-bottom:none}
+.zletter{width:14mm;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15mm;font-weight:900}
+.zinfo{width:48mm;flex:none;border-left:1.5mm solid;padding:1mm 2mm;display:flex;flex-direction:column;justify-content:center;font-size:2.8mm;color:#334155;gap:0.4mm}
+.zname{font-size:4mm;font-weight:800}
+.zr{font-weight:600;color:#64748b}
+.zplan{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-start;overflow:hidden;padding:0 1mm 0 0}
+.zplan svg{width:100%;height:100%;display:block}
+.zsum{width:80mm;flex:none;padding:1mm 1mm 1mm 0;display:flex;flex-direction:column;justify-content:center}
+.sh{color:#fff;font-size:2.8mm;font-weight:700;text-align:center;padding:0.6mm;border-radius:1mm 1mm 0 0}
+.zsum table{width:100%;border-collapse:collapse;font-size:2.6mm}
+.zsum th,.zsum td{border:0.18mm solid #cbd5e1;padding:0.4mm 1mm;text-align:center;line-height:1.15}
+.zsum th{background:#f1f5f9;font-weight:700}
+.zsum td:first-child,.zsum th:first-child{text-align:left}
+.zsum td.d{color:#16a34a;font-weight:700}
+.zsum td.r{color:#dc2626;font-weight:600}
+.ovbar{flex:none;height:42mm;display:flex;align-items:stretch;border-bottom:0.6mm solid #0f2d5a;padding:1mm 0;gap:1mm}
+.ovlabel{width:8mm;flex:none;writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;font-size:3mm;font-weight:800;color:#0f2d5a;letter-spacing:0.3mm}
+.ovbox{flex:1;min-width:0;overflow:hidden}
+.ovbox svg{width:100%;height:100%;display:block}
+`;
+    const html='<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>Plan View P03 - '+today+'</title><style>'+css+'</style></head><body>'
+      +'<div class="board"><div class="hdr"><div class="logos">'+logos.map(s=>'<img src="'+s+'">').join('')+'</div>'
+      +'<div class="tt"><div class="t1">โครงการก่อสร้างทางรถไฟทางคู่ ช่วงขอนแก่น – หนองคาย</div>'
+      +'<div class="t2">บอร์ดติดตามความก้าวหน้างานโครงสร้าง (Structure Progress Plan)</div>'
+      +'<div class="t3">สัญญา ASNK/A/001 • Package P03 (ทางยกระดับ) • อัพเดทล่าสุด: '+today+' • ผู้รายงาน: ____________</div>'
+      +'</div></div>'+zoneHTML+'</div>'
+      +'<scr'+'ipt>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},700);};</scr'+'ipt>'
+      +'</body></html>';
+    const win=window.open('','_blank');
+    if(!win){showToast('เบราว์เซอร์บล็อกป๊อปอัพ — อนุญาตแล้วลองใหม่','red');return;}
+    win.document.write(html); win.document.close(); win.focus();
+    showToast('กำลังเปิดหน้าพิมพ์ A3 — เลือก Save as PDF','green');
+  }catch(e){ try{renderPlanView();}catch(_){} showToast('Export ผิดพลาด: '+e.message,'red'); }
+}
+
+
 function renderPlanView() {
   const groups  = getPvAxisGroups();
   const fromIdx = parseInt(document.getElementById('pv-from').value);
@@ -3561,7 +3687,7 @@ function renderPlanView() {
   const PILE_PLAN_H= 90;
   const TOP_LBL    = 14;
   const TOP_H      = TOP_LBL + 6;
-  const TOTAL_H    = TOP_H + SEG_H + COL_H + FTG_H + PILE_PLAN_H + 36;
+  const TOTAL_H    = TOP_H + SEG_H + COL_H + FTG_H + PILE_PLAN_H + (pvBigLabels?54:36);
 
   const Y_SEG_TOP = TOP_H;
   const Y_SEG_BOT = Y_SEG_TOP + SEG_H;
@@ -3667,8 +3793,9 @@ function renderPlanView() {
 
         // ชื่อ label ใต้
         const stLabel = ax.replace('No.','No.').replace('-Static Test 1.2',' ST Ø1.2').replace('-Static Test',' Static');
-        svg += `<rect x="${(xSub-30).toFixed(1)}" y="${Y_LBL-11}" width="60" height="13" rx="4" fill="${stColorBg}"/>`;
-        svg += `<text x="${xSub}" y="${Y_LBL}" text-anchor="middle" font-size="7" font-weight="700" fill="${stColor}">${stLabel}</text>`;
+        const _sy = Y_LBL + (pvBigLabels?30:0), _sf=pvBigLabels?10:7, _sw=pvBigLabels?96:60, _sh=pvBigLabels?15:13;
+        svg += `<rect x="${(xSub-_sw/2).toFixed(1)}" y="${_sy-11}" width="${_sw}" height="${_sh}" rx="4" fill="${stColorBg}"/>`;
+        svg += `<text x="${xSub}" y="${_sy+(pvBigLabels?1:0)}" text-anchor="middle" font-size="${_sf}" font-weight="700" fill="${stColor}">${stLabel}</text>`;
         return;
       }
 
@@ -3697,7 +3824,7 @@ function renderPlanView() {
       const _headDone  = colSteps.head;
       const _shaftDone = colSteps.shaft;
       const _kickDone  = colSteps.kicker || colSteps.shaft;
-      const cHead  = _headDone  ? '#16a34a' : C_NONE;
+      const cHead  = _headDone  ? '#1d4ed8' : C_NONE;
       const cShaft = _shaftDone ? '#1d4ed8' : C_NONE;
       const cKick  = _kickDone  ? '#1d4ed8' : C_NONE;
       const headTopW = isPaired ? 20 : 38;
@@ -3756,13 +3883,20 @@ function renderPlanView() {
     // Pier label ใต้ group
     let lblText = group.baseKey;
     let lblW = 48;
-    if (group.baseKey.startsWith('P03-'))          { lblText = 'Pier '+group.baseKey.replace('P03-',''); lblW=48; }
-    else if (group.baseKey.startsWith('ST-P-'))    { lblText = 'STP '+group.baseKey.replace('ST-P-',''); lblW=48; }
+    if (group.baseKey.startsWith('P03-'))          { lblText = group.baseKey.replace('P03-',''); lblW=44; }
+    else if (group.baseKey.startsWith('ST-P-'))    { lblText = 'S'+parseInt(group.baseKey.replace('ST-P-','')); lblW=40; }
     else if (group.baseKey.includes('Static Test')){ lblText = group.baseKey.replace('No.','No.'); lblW=72; }
     if (isPaired) lblW = Math.max(lblW, 48);
+    const _bigL = pvBigLabels;
     const lblY  = isPaired ? Y_LBL + pairRowOffset : Y_LBL;
-    svg += `<rect x="${(x-lblW/2).toFixed(1)}" y="${lblY-11}" width="${lblW}" height="13" rx="4" fill="#ede9fe"/>`;
-    svg += `<text x="${x}" y="${lblY}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#7c3aed">${lblText}</text>`;
+    if(group.baseKey.includes('Static Test')){
+      /* Static Test มีป้ายของตัวเองในบล็อกด้านบนแล้ว ไม่ต้องวาดป้ายกลุ่มซ้ำ */
+    } else if(_bigL){
+      svg += `<text x="${x}" y="${lblY+10}" text-anchor="middle" font-size="20" font-weight="800" fill="#1e293b">${lblText}</text>`;
+    } else {
+      svg += `<rect x="${(x-lblW/2).toFixed(1)}" y="${lblY-11}" width="${lblW}" height="13" rx="4" fill="#ede9fe"/>`;
+      svg += `<text x="${x}" y="${lblY}" text-anchor="middle" font-size="6.5" font-weight="700" fill="#7c3aed">${lblText}</text>`;
+    }
   }); // end visible.forEach
 
   svg += '</svg>';
@@ -4322,7 +4456,7 @@ function renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
   const STEP_LBL={head:'Pier Head',shaft:'Pier Shaft',kicker:'Kicker'};
   // สีตามรูป: Kicker = น้ำเงิน, Pier Shaft / Pier Head = เขียว
   const COLORS={
-    head  :{fill:'#16a34a',stroke:'#15803d'},
+    head  :{fill:'#1d4ed8',stroke:'#1e3a8a'},
     shaft :{fill:'#1d4ed8',stroke:'#1e3a8a'},
     kicker:{fill:'#1d4ed8',stroke:'#1e3a8a'}
   };
@@ -4387,7 +4521,7 @@ function renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
   cards.forEach(c => {
     const nDone=STEP_KEYS.filter(k=>c.steps[k]).length;
     const topPx = PAD_TOP + c.row*(CARD_H+6);
-    const hdrBg = nDone===3 ? '#15803d' : (nDone>0 ? '#7c3aed' : '#94a3b8');
+    const hdrBg = nDone===3 ? '#1e40af' : (nDone>0 ? '#3b82f6' : '#94a3b8');
     const lbl   = c.ax.replace('P03-','').replace('ST-P-','STP-');
     html += '<div style="position:absolute;left:'+c.left.toFixed(0)+'px;top:'+topPx+'px;width:'+CARD_W+'px;border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);background:#fff">'
       +'<div style="background:'+hdrBg+';color:#fff;padding:2px 6px;font-weight:700;font-size:10px;display:flex;justify-content:space-between">'
