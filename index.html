@@ -3543,8 +3543,9 @@ function exportPlanBoard(){
         if(loc===ax||loc.includes(ax))return true; return !!axN&&(loc.match(/\d+/g)||[]).includes(axN); }); };
     // 6 แถว (แยก C เป็น C-1/C-2) — แต่ละโซนยืดเต็มความกว้างของแถว
     const ZDEF=[
-      {id:'A', letter:'A', label:'Zone A',   color:'#16a34a', fromKey:'P03-165', toKey:'P03-189'},
-      {id:'B', letter:'B', label:'Zone B',   color:'#0284c7', fromKey:'P03-130', toKey:'P03-164'},
+      {id:'A', letter:'A', label:'Zone A',   color:'#16a34a', fromKey:'P03-164', toKey:'P03-189'},
+      {id:'B1',letter:'B', label:'Zone B-1', color:'#0284c7', fromKey:'P03-149', toKey:'P03-163'},
+      {id:'B2',letter:'B', label:'Zone B-2', color:'#0284c7', fromKey:'P03-130', toKey:'P03-148'},
       {id:'C1',letter:'C', label:'Zone C-1', color:'#d97706', fromKey:'P03-66',  toKey:'P03-99'},
       {id:'C2',letter:'C', label:'Zone C-2', color:'#d97706', fromKey:'P03-100', toKey:'P03-129'},
       {id:'D', letter:'D', label:'Zone D',   color:'#7c3aed', fromKey:'ST-P-01', toKey:'ST-P-18'},
