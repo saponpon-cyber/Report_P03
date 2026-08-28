@@ -271,6 +271,7 @@ th{position:sticky;top:0;z-index:2}
           <option value="Dynamic Pile Load Test">Dynamic Pile Load Test</option>
           <option value="Sonic Logging Test">Sonic Logging Test</option>
           <option value="Footing">Footing</option>
+          <option value="Lean Concrete">Lean Concrete (รองฐานราก)</option>
           <option value="Column / Crossbeam">Column / Crossbeam</option>
           <option value="Cable Trough">Cable Trough</option>
           <option value="Concrete Barrier">Concrete Barrier</option>
@@ -482,6 +483,7 @@ th{position:sticky;top:0;z-index:2}
           <option value="Dynamic Pile Load Test">Dynamic Pile Load Test</option>
           <option value="Sonic Logging Test">Sonic Logging Test</option>
           <option value="Footing">Footing</option>
+          <option value="Lean Concrete">Lean Concrete (รองฐานราก)</option>
           <option value="Column / Crossbeam">Column / Crossbeam</option>
           <option value="Cable Trough">Cable Trough</option>
           <option value="Concrete Barrier">Concrete Barrier</option>
@@ -1033,6 +1035,7 @@ const INVENTORY = [
   {id:'ft-vp2a',cat:'Footing',name:'- VP2A',total:4,unit:'ฐาน'},
   {id:'ft-vp2b',cat:'Footing',name:'- VP2B',total:2,unit:'ฐาน'},
   {id:'ft-f6c6',cat:'Footing',name:'- F6/C6',total:36,unit:'ฐาน'},
+  {id:'lc-lc',cat:'Lean Concrete',name:'Lean Concrete (รองฐานราก)',total:194,unit:'จุด'},
   {id:'col-col',cat:'Column / Crossbeam',name:'- Column',total:194,unit:'ต้น'},
   {id:'col-cb2a',cat:'Column / Crossbeam',name:'- CrossBeam VP2A',total:4,unit:'ea.'},
   {id:'col-cb2b',cat:'Column / Crossbeam',name:'- CrossBeam VP2B',total:2,unit:'ea.'},
@@ -2413,6 +2416,7 @@ const CAT_ITEMS = {
   'Sonic Logging Test':['slt-120','slt-150'],
   'Footing':['ft-vp1','ft-vp1s','ft-vp2a','ft-vp2b','ft-f6c6'],
   'Column / Crossbeam':['col-col','col-cb2a','col-cb2b','col-pf1830','col-pf2050'],
+  'Lean Concrete':['lc-lc'],
   'Cable Trough':['ct-ct'],
   'Concrete Barrier':['cb-cb']
 };
@@ -2763,7 +2767,7 @@ function renderHistory(){
     document.getElementById('hist-tbody').innerHTML='<tr><td colspan="15" class="text-center py-8 text-gray-400">ยังไม่มีข้อมูล</td></tr>';
     return;
   }
-  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700'};
+  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Lean Concrete':'bg-yellow-100 text-yellow-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700'};
   let html='';
   filtered.forEach(r=>{
     const cc=catColors[r.category]||'bg-gray-100 text-gray-700';
@@ -2904,7 +2908,7 @@ function renderCalendar(){
   let html='';
   for(let i=0;i<firstDow;i++)html+='<div class="min-h-24 bg-gray-50 rounded-xl"></div>';
   // สีประจำหมวดงาน (ตรงกับหน้าประวัติ)
-  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700'};
+  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Lean Concrete':'bg-yellow-100 text-yellow-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700'};
   const evtLabel=(r)=>{ let name=r.category, pos='';
     if(r.category==='Column / Crossbeam'){ name=(r.item_id==='col-col')?'Column':'Crossbeam';
       pos=(r.location&&r.location!=='-')?r.location:''; }
@@ -3436,6 +3440,88 @@ function pvZoneClear(){
   document.querySelectorAll('.pv-zone-btn').forEach(b => b.style.outline='none');
 }
 
+function renderAllBoard(){
+  const canvas=document.getElementById('pv-canvas');
+  if(!canvas) return;
+  try{
+    const groups=getPvAxisGroups();
+    if(!groups.length){canvas.innerHTML='<div style="padding:20px;color:#64748b">ไม่มีข้อมูลแปลน</div>';return;}
+    const num=k=>parseInt(String(k).replace(/\D/g,''));
+    const findIdx=(key,fb)=>{ if(!key)return fb; let i=groups.findIndex(g=>g.baseKey===key); if(i>=0)return i;
+      const n=num(key); if(isNaN(n))return fb; let best=fb,bd=1e9;
+      groups.forEach((g,gi)=>{const gn=num(g.baseKey); if(!isNaN(gn)&&Math.abs(gn-n)<bd){bd=Math.abs(gn-n);best=gi;}}); return best; };
+    const pilesSet=getPileDoneSet();
+    const ftMatch=(ax)=>{ const axN=(ax.split('-')[1]||'').replace(/\D/g,'');
+      return records.some(r=>{ if(!(r.item_id&&r.item_id.startsWith('ft-')))return false; const loc=String(r.location||''); if(!loc)return false;
+        if(loc===ax||loc.includes(ax))return true; return !!axN&&(loc.match(/\d+/g)||[]).includes(axN); }); };
+    const ZDEF=[
+      {letter:'A',label:'Zone A',  color:'#16a34a',fromKey:'P03-164',toKey:'P03-189'},
+      {letter:'B',label:'Zone B-1',color:'#0284c7',fromKey:'P03-149',toKey:'P03-163'},
+      {letter:'B',label:'Zone B-2',color:'#0284c7',fromKey:'P03-130',toKey:'P03-148'},
+      {letter:'C',label:'Zone C-1',color:'#d97706',fromKey:'P03-66', toKey:'P03-99'},
+      {letter:'C',label:'Zone C-2',color:'#d97706',fromKey:'P03-100',toKey:'P03-129'},
+      {letter:'D',label:'Zone D',  color:'#7c3aed',fromKey:'ST-P-01',toKey:'ST-P-18'},
+      {letter:'E',label:'Zone E',  color:'#dc2626',fromKey:'P03-40', toKey:'P03-65'}
+    ];
+    const fromSel=document.getElementById('pv-from'), toSel=document.getElementById('pv-to');
+    if(!fromSel.options.length) initPvSelects();
+    const saveFrom=fromSel.value, saveTo=toSel.value, saveFit=pvFitMode, saveBig=pvBigLabels;
+    pvFitMode=false; pvBigLabels=true;
+    const ensureVB=(svg)=>{ const head=svg.slice(0,svg.indexOf('>')); const m=svg.match(/width="([\d.]+)"[^>]*height="([\d.]+)"/);
+      if(m && !/viewBox=/.test(head)) svg=svg.replace('<svg','<svg preserveAspectRatio="xMinYMid meet" viewBox="0 0 '+m[1]+' '+m[2]+'"'); return svg; };
+    const zones=ZDEF.map(zd=>{
+      const fi=findIdx(zd.fromKey,0), ti=findIdx(zd.toKey,groups.length-1);
+      const from=Math.min(fi,ti), to=Math.max(fi,ti);
+      fromSel.value=from; toSel.value=to; renderPlanView();
+      let svg=ensureVB(document.getElementById('pv-canvas').innerHTML);
+      svg=svg.replace('<svg','<svg style="width:100%;height:100%;display:block"');
+      const visible=groups.slice(from,to+1);
+      const axKeys=[]; let pileT=0,pileD=0,ftT=0,ftD=0,colT=0;
+      visible.forEach(g=>g.axes.forEach(ax=>{ axKeys.push(ax); const d=AXIS_PLAN[ax]||{}; const ps=d.piles||[];
+        pileT+=ps.length; pileD+=ps.filter(p=>pilesSet.has(p.id)).length;
+        if(d.footing){ftT++; if(ftMatch(ax))ftD++;} if(d.column)colT++; }));
+      const colD=colHeadDoneCount(axKeys);
+      const paired=visible.some(g=>g.isPaired);
+      const first=(visible[0]||{}).baseKey||'', last=(visible[visible.length-1]||{}).baseKey||'';
+      return Object.assign({},zd,{range:first+' – '+last,axes:visible.length,paired:paired,svg:svg,pileT,pileD,ftT,ftD,colT,colD});
+    });
+    pvBigLabels=saveBig; pvFitMode=saveFit; fromSel.value=saveFrom; toSel.value=saveTo;
+
+    const cell='border:1px solid #cbd5e1;padding:2px 5px';
+    const sumRow=(n,t,d)=>'<tr>'
+      +'<td style="'+cell+';text-align:left">'+n+'</td>'
+      +'<td style="'+cell+'">'+t+'</td>'
+      +'<td style="'+cell+';color:#16a34a;font-weight:700">'+d+'</td>'
+      +'<td style="'+cell+';color:#dc2626">'+Math.max(0,t-d)+'</td></tr>';
+    let html='<div style="display:flex;flex-direction:column;background:#fff;font-family:sans-serif;min-width:820px">';
+    zones.forEach(z=>{
+      const rh=z.paired?176:88;
+      html+='<div style="display:flex;align-items:stretch;border-bottom:1px solid #e2e8f0;height:'+rh+'px">'
+        +'<div style="width:46px;flex:none;display:flex;align-items:center;justify-content:center;background:'+z.color+';color:#fff;font-size:26px;font-weight:900">'+z.letter+'</div>'
+        +'<div style="width:158px;flex:none;border-left:5px solid '+z.color+';padding:6px 9px;display:flex;flex-direction:column;justify-content:center;color:#334155">'
+          +'<div style="font-size:15px;font-weight:800;color:'+z.color+'">'+z.label+'</div>'
+          +'<div style="font-size:11px;font-weight:600;color:#64748b">'+z.range+'</div>'
+          +'<div style="font-size:11px">'+z.axes+' ต้น (axes)</div>'
+          +'<div style="font-size:11px">เข็ม '+z.pileT+' ต้น</div>'
+        +'</div>'
+        +'<div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-start;overflow:hidden;padding:0 4px">'+z.svg+'</div>'
+        +'<div style="width:250px;flex:none;padding:4px 6px;display:flex;flex-direction:column;justify-content:center">'
+          +'<div style="background:'+z.color+';color:#fff;font-size:11px;font-weight:700;text-align:center;padding:2px;border-radius:4px 4px 0 0">สรุปปริมาณงาน</div>'
+          +'<table style="width:100%;border-collapse:collapse;font-size:11px;text-align:center">'
+          +'<tr style="background:#f1f5f9;font-weight:700">'
+            +'<th style="'+cell+';text-align:left">รายการ</th><th style="'+cell+'">ทั้งหมด</th><th style="'+cell+'">ทำแล้ว</th><th style="'+cell+'">เหลือ</th></tr>'
+          +sumRow('รวมเข็ม',z.pileT,z.pileD)
+          +sumRow('ฐานราก',z.ftT,z.ftD)
+          +sumRow('เสา (ถึง Pier Head)',z.colT,z.colD)
+          +'</table>'
+        +'</div>'
+      +'</div>';
+    });
+    html+='</div>';
+    canvas.innerHTML=html;
+  }catch(e){ try{ if(typeof renderProjectOverview==='function') renderProjectOverview(); }catch(_){} }
+}
+
 function pvGoZone(zoneId){
   _pvActiveZone = zoneId;
   document.querySelectorAll('.pv-zone-btn').forEach(b => {
@@ -3446,7 +3532,7 @@ function pvGoZone(zoneId){
 
   // ALL → แสดง Project Overview SVG แทนแปลนปกติ
   if (zoneId === 'ALL') {
-    renderProjectOverview();
+    renderAllBoard();
     return;
   }
 
@@ -3811,6 +3897,9 @@ function renderPlanView() {
       records.forEach(r => { if(r.item_id!=='col-col') return; if(!_locHitCol(r.location)) return;
         const st=(r.pile_id==='head'||r.pile_id==='shaft'||r.pile_id==='kicker')?r.pile_id:'head'; colSteps[st]=true; });
       const colRec = colSteps.head||colSteps.shaft||colSteps.kicker;
+      // Lean Concrete (เทคอนกรีตรองฐานราก) — จับคู่ตำแหน่งแบบยืดหยุ่น
+      const leanRec = records.find(r => r.item_id && r.item_id.startsWith('lc-') &&
+        (r.location===ax || (r.location||'').includes(ax) || (!!_axNumC && (String(r.location||'').match(/\d+/g)||[]).includes(_axNumC))));
       const allPiles   = d0.piles || [];
       const donePiles  = allPiles.filter(p => pilesSet.has(p.id));
       const pileDone   = donePiles.length===allPiles.length && allPiles.length>0;
@@ -3848,6 +3937,9 @@ function renderPlanView() {
       const sp = isPaired ? 9 : 13;
       const LAYOUTS = {4:[[+sp,-sp],[+sp,+sp],[-sp,+sp],[-sp,-sp]],2:[[0,-sp],[0,+sp]],6:[[+sp,-sp],[+sp,0],[+sp,+sp],[-sp,+sp],[-sp,0],[-sp,-sp]]};
       const layout = LAYOUTS[allPiles.length] || LAYOUTS[4];
+      // Lean Concrete (รองฐานราก) → เส้นสีเหลืองใต้ฐานราก (กว้างกว่าฐานรากเล็กน้อย)
+      if(leanRec){ const _lw=(isPaired?34:54); const _ly=Y_FTG_BOT+1.5;
+        svg += `<rect x="${(xSub-_lw/2).toFixed(1)}" y="${_ly}" width="${_lw}" height="4" rx="2" fill="#eab308" stroke="#a16207" stroke-width="0.6"/>`; }
       allPiles.forEach((p, pi) => {
         const pid=p.id;
         const isDone = pilesSet.has(pid);
