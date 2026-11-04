@@ -276,6 +276,7 @@ th{position:sticky;top:0;z-index:2}
           <option value="Column / Crossbeam">Column / Crossbeam</option>
           <option value="Cable Trough">Cable Trough</option>
           <option value="Concrete Barrier">Concrete Barrier</option>
+          <option value="Pot Bearing">🛞 Pot Bearing (ตัวรองรับคาน)</option>
         </select>
       </div>
       <!-- Item -->
@@ -396,6 +397,31 @@ th{position:sticky;top:0;z-index:2}
             <input type="number" id="anc-rock" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" step="0.01" min="0" placeholder="0.00">
           </div>
         </div>
+      </div>
+
+      <!-- Pot Bearing sub-form (hidden unless cat=Pot Bearing) -->
+      <div id="brg-fields" class="hidden space-y-3 bg-teal-50 border border-teal-200 rounded-xl p-4">
+        <h3 class="text-sm font-bold text-teal-800 flex items-center gap-2">🛞 บันทึก Pot Bearing</h3>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">📍 เสา (Pier)</label>
+          <select id="r-brg-pier" class="w-full px-3 py-2.5 border border-teal-300 rounded-xl text-sm bg-white">
+            <option value="">-- เลือกเสา --</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-2">ตำแหน่ง Pot Bearing</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 flex-1">
+              <input type="checkbox" id="r-brg-top" class="w-4 h-4 accent-green-600">
+              <span class="text-sm font-semibold text-green-800">🟢 Top (บน)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 flex-1">
+              <input type="checkbox" id="r-brg-bot" class="w-4 h-4 accent-amber-500">
+              <span class="text-sm font-semibold text-amber-800">🟡 Bottom (ล่าง)</span>
+            </label>
+          </div>
+        </div>
+        <p class="text-xs text-teal-600">📅 วันที่ใช้จากฟิลด์ "วันที่" ด้านบน</p>
       </div>
 
       <!-- Remarks -->
@@ -653,6 +679,11 @@ th{position:sticky;top:0;z-index:2}
       <span class="flex items-center gap-1"><span class="inline-block w-5 h-3 rounded" style="background:#fff;border:2px solid #fbbf24"></span>H (Half)</span>
       <span class="flex items-center gap-1"><span class="inline-block w-5 h-3 rounded" style="background:#ef4444;border:2px solid #b91c1c"></span>ติดตั้งแล้ว</span>
       <span class="flex items-center gap-1"><span class="inline-block w-5 h-3 rounded" style="background:#e2e8f0;border:1px solid #94a3b8"></span>ยังไม่หล่อ</span>
+      <!-- Pot Bearing legend -->
+      <span class="w-px h-4 bg-gray-300 mx-1 inline-block"></span>
+      <span class="font-semibold text-gray-500">🛞 Bearing:</span>
+      <span class="flex items-center gap-1"><span class="flex gap-0.5 items-center"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22c55e;border:1px solid #15803d"></span><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22c55e;border:1px solid #15803d"></span></span><span>Top ติดแล้ว</span></span>
+      <span class="flex items-center gap-1"><span class="flex gap-0.5 items-center"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#f59e0b;border:1px solid #b45309"></span><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#f59e0b;border:1px solid #b45309"></span></span><span>Bottom ติดแล้ว</span></span>
     </div>
   </div>
   <!-- Canvas wrapper -->
@@ -879,7 +910,7 @@ th{position:sticky;top:0;z-index:2}
     <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
       <span class="text-2xl">🏗️</span> Segment Casting — Section 3 (AS)
     </h2>
-    <div class="flex gap-2 ml-auto flex-wrap">
+    <div class="flex gap-2 ml-auto flex-wrap items-center">
       <select id="seg-zone-filter" class="border rounded px-2 py-1 text-xs" onchange="renderSegmentTab()">
         <option value="ALL">ทุก Zone</option>
         <option value="A">Zone A (P03-164–190)</option>
@@ -893,6 +924,12 @@ th{position:sticky;top:0;z-index:2}
         <option value="full">หล่อครบ</option>
         <option value="none">ยังไม่ได้หล่อ</option>
       </select>
+      <!-- PDF Upload button -->
+      <label class="flex items-center gap-1.5 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded shadow" title="อัพโหลด PDF วันหล่อ แล้วอัพเดทอัตโนมัติ">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        อัพโหลด PDF
+        <input type="file" id="seg-pdf-upload" accept=".pdf" class="hidden" onchange="importSegmentPDF(this)">
+      </label>
     </div>
   </div>
   <!-- Legend -->
@@ -910,6 +947,7 @@ th{position:sticky;top:0;z-index:2}
   <!-- Span grid -->
   <div id="seg-grid" class="space-y-1"></div>
 </div>
+
 
 </main>
 </div><!-- end app wrapper -->
@@ -2477,12 +2515,39 @@ function onCatChange(){
   const sel=document.getElementById('r-item');
   document.getElementById('bp-fields').classList.add('hidden');
   document.getElementById('anc-fields').classList.add('hidden');
+  document.getElementById('brg-fields').classList.add('hidden');
   document.getElementById('anc-top-casing').value='';
   document.getElementById('anc-cutoff').value='';
   document.getElementById('anc-soil').value='';
   document.getElementById('anc-rock').value='';
   document.getElementById('pile-selector').classList.add('hidden');
   if(!cat){sel.innerHTML='<option value="">-- เลือกหมวดงานก่อน --</option>';sel.disabled=true;return;}
+
+  // Pot Bearing: แสดง sub-form พิเศษ ซ่อน item dropdown
+  if(cat==='Pot Bearing'){
+    sel.innerHTML='<option value="brg-bearing">Pot Bearing Installation</option>';
+    sel.disabled=true;
+    document.getElementById('r-unit').value='ตำแหน่ง';
+    document.getElementById('brg-fields').classList.remove('hidden');
+    // populate pier dropdown
+    const pierSel=document.getElementById('r-brg-pier');
+    const data=loadBearingData();
+    let opts='<option value="">-- เลือกเสา --</option>';
+    for(const [zone,list] of Object.entries(PIER_ZONES)){
+      const zcolor=ZONE_COLORS_BRG[zone]||'#64748b';
+      opts+=`<optgroup label="Zone ${zone}">`;
+      list.forEach(p=>{
+        const r=data[p]||{};
+        const done=(r.top?1:0)+(r.bot?1:0);
+        const mark=done===2?'✅':done===1?'⚠️':'';
+        opts+=`<option value="${p}">${mark} ${p}</option>`;
+      });
+      opts+='</optgroup>';
+    }
+    pierSel.innerHTML=opts;
+    return;
+  }
+
   const ids=CAT_ITEMS[cat]||[];
   sel.innerHTML='<option value="">-- เลือกรายการ --</option>'+ids.map(id=>{
     const inv=INVENTORY.find(i=>i.id===id);
@@ -2675,6 +2740,34 @@ function submitRecord(){
   const concrete=parseFloat(document.getElementById('r-concrete').value)||0;
   const pin=document.getElementById('r-pin').value;
 
+  // --- Pot Bearing: บันทึกแยก (ไม่ใช้ records array)
+  if(cat==='Pot Bearing'){
+    if(pin!==PIN_RECORD){showToast('รหัส PIN ไม่ถูกต้อง','red');document.getElementById('r-pin').value='';return;}
+    const pier=document.getElementById('r-brg-pier').value;
+    const doTop=document.getElementById('r-brg-top').checked;
+    const doBot=document.getElementById('r-brg-bot').checked;
+    if(!pier){showToast('กรุณาเลือกเสา','red');return;}
+    if(!doTop&&!doBot){showToast('กรุณาเลือกตำแหน่ง Top หรือ Bottom','red');return;}
+    if(!date){showToast('กรุณาเลือกวันที่','red');return;}
+    const data=loadBearingData();
+    if(!data[pier]) data[pier]={top:'',bot:''};
+    if(doTop) data[pier].top=date;
+    if(doBot) data[pier].bot=date;
+    saveBearingData(data);
+    showToast(`บันทึก Pot Bearing ${pier} สำเร็จ! 🛞`,'green');
+    // reset bearing form
+    document.getElementById('r-cat').value='';
+    document.getElementById('r-brg-pier').value='';
+    document.getElementById('r-brg-top').checked=false;
+    document.getElementById('r-brg-bot').checked=false;
+    document.getElementById('r-pin').value='';
+    document.getElementById('brg-fields').classList.add('hidden');
+    document.getElementById('r-item').innerHTML='<option value="">-- เลือกหมวดงานก่อน --</option>';
+    document.getElementById('r-item').disabled=true;
+    if(document.getElementById('view-plan')&&!document.getElementById('view-plan').classList.contains('hidden'))renderPlanView();
+    return;
+  }
+
   if(!date||!user||!cat||!itemId||qty<1){showToast('กรุณากรอกข้อมูลให้ครบ','red');return;}
   if(pin!==PIN_RECORD){showToast('รหัส PIN ไม่ถูกต้อง','red');document.getElementById('r-pin').value='';return;}
 
@@ -2746,6 +2839,7 @@ function submitRecord(){
   document.getElementById('r-pile-id').innerHTML='<option value="">-- เลือก AXIS ก่อน --</option>';
   document.getElementById('r-pile-id').disabled=true;
   document.getElementById('bp-fields').classList.add('hidden');
+  document.getElementById('brg-fields').classList.add('hidden');
   document.getElementById('pile-selector').classList.add('hidden');
   document.getElementById('pile-status-badge').classList.add('hidden');
   document.getElementById('r-unit').value='';
@@ -3819,17 +3913,18 @@ function renderPlanView() {
   const pxPerM   = 1.8 * fitScale;
 
   const SEG_H      = 22;
+  const BRG_GAP    = 16;  // ช่องว่างระหว่าง Segment และ pier head สำหรับ Pot Bearing dots (Top+Bottom แนวตั้ง)
   const COL_H      = 48;
   const FTG_W      = 44;
   const FTG_H      = 18;
   const PILE_PLAN_H= 90;
   const TOP_LBL    = 14;
   const TOP_H      = TOP_LBL + 6;
-  const TOTAL_H    = TOP_H + SEG_H + COL_H + FTG_H + PILE_PLAN_H + (pvBigLabels?54:36);
+  const TOTAL_H    = TOP_H + SEG_H + BRG_GAP + COL_H + FTG_H + PILE_PLAN_H + (pvBigLabels?54:36);
 
   const Y_SEG_TOP = TOP_H;
   const Y_SEG_BOT = Y_SEG_TOP + SEG_H;
-  const Y_COL_TOP = Y_SEG_BOT;
+  const Y_COL_TOP = Y_SEG_BOT + BRG_GAP;   // เลื่อนลง BRG_GAP เพื่อให้มีที่แสดง Bearing dots
   const Y_COL_BOT = Y_COL_TOP + COL_H;
   const Y_FTG_TOP = Y_COL_BOT;
   const Y_FTG_BOT = Y_FTG_TOP + FTG_H;
@@ -4060,6 +4155,32 @@ function renderPlanView() {
       svg += `<rect x="${(xSub-shaftW/2).toFixed(1)}" y="${yS0}" width="${shaftW}" height="${shaftH}" fill="${cShaft}" stroke="#334155" stroke-width="1.2"/>`;
       svg += `<rect x="${(xSub-kickW/2).toFixed(1)}" y="${yK0}" width="${kickW}" height="${kickH}" fill="${cKick}" stroke="#334155" stroke-width="1.2"/>`;
       if (colRec) svg += `<text x="${xSub}" y="${(yS0+shaftH/2+3).toFixed(1)}" text-anchor="middle" font-size="5.5" font-weight="700" fill="${colSteps.shaft?'#fff':'#475569'}">COL</text>`;
+      // Pot Bearing: 2 rows of circles in BRG_GAP zone
+      // Top row (green) near Segment bottom, Bottom row (amber) near pier head top
+      {const _brgAll=loadBearingData();const _brgId=ax.replace(/-LT$|-RT$|-L$|-R$/,'');const _brgRec=_brgAll[_brgId]||{};
+      const _r = 4;   // circle radius
+      // BRG_GAP=16px; split evenly: Top at 1/4 from top, Bottom at 3/4 from top
+      const _cyTop = yH0 - 16 + 4;   // near Segment bottom
+      const _cyBot = yH0 - 4;        // near pier head top (gap between rows)
+      // x positions: left and right circles, symmetric around pier center
+      const _cx1 = xSub - _r - 2;
+      const _cx2 = xSub + _r + 2;
+      // Top circles (green)
+      if(_brgRec.top){
+        svg+=`<circle cx="${_cx1.toFixed(1)}" cy="${_cyTop.toFixed(1)}" r="${_r}" fill="#22c55e" stroke="#15803d" stroke-width="0.8"/>`;
+        svg+=`<circle cx="${_cx2.toFixed(1)}" cy="${_cyTop.toFixed(1)}" r="${_r}" fill="#22c55e" stroke="#15803d" stroke-width="0.8"/>`;
+      } else {
+        svg+=`<circle cx="${_cx1.toFixed(1)}" cy="${_cyTop.toFixed(1)}" r="${_r}" fill="none" stroke="#86efac" stroke-width="0.8" stroke-dasharray="2,1"/>`;
+        svg+=`<circle cx="${_cx2.toFixed(1)}" cy="${_cyTop.toFixed(1)}" r="${_r}" fill="none" stroke="#86efac" stroke-width="0.8" stroke-dasharray="2,1"/>`;
+      }
+      // Bottom circles (amber)
+      if(_brgRec.bot){
+        svg+=`<circle cx="${_cx1.toFixed(1)}" cy="${_cyBot.toFixed(1)}" r="${_r}" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/>`;
+        svg+=`<circle cx="${_cx2.toFixed(1)}" cy="${_cyBot.toFixed(1)}" r="${_r}" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/>`;
+      } else {
+        svg+=`<circle cx="${_cx1.toFixed(1)}" cy="${_cyBot.toFixed(1)}" r="${_r}" fill="none" stroke="#fde68a" stroke-width="0.8" stroke-dasharray="2,1"/>`;
+        svg+=`<circle cx="${_cx2.toFixed(1)}" cy="${_cyBot.toFixed(1)}" r="${_r}" fill="none" stroke="#fde68a" stroke-width="0.8" stroke-dasharray="2,1"/>`;
+      }}
 
       // Footing
       const fw = isPaired ? 28 : FTG_W;
@@ -4769,7 +4890,7 @@ function renderPvColPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
 // SEGMENT CASTING DATA (Section 3-AS, from Excel 21/09/2569)
 // Format: { "P03-NNN": [["Type","date"|null], ...], ... }
 // ══════════════════════════════════════════════════════════════════
-const SEG_DATA = {"P03-39":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-40":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-41":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-42":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-43":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-44":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-45":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-46":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-47":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-48":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-49":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-50":[["E",null],["S",null],["S",null],["D4",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-51":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-52":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-53":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-54":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-55":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-56":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-57":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-58":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-59-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-59-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-60-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-60-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-61-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-61-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-62-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-62-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-63-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-63-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-64-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-64-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-65-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"P03-65-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-1-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-1-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-2-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-2-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-3-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-3-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-4-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-4-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-5-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-5-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-6-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-6-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-7-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-7-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-8-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-8-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-9-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-9-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-10-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-10-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-11-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-11-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-12-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-12-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-13-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-13-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-14-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-14-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-15-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-15-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-16-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-16-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-17-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-17-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"P03-18-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-18-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-66-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-66-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-67-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-67-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-68-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-68-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-69-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-69-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-70-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-70-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-71-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-71-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-72":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-73":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-74":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-75":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-76":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-77":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-78":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-79":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-80":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-81":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-82":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-83":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-84":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-85":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-86":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-87":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-88":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-89":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-90":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-91":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-92":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-93":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-94":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-95":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-96":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-97":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-98":[["E",null],["S",null],["S",null],["D4",null],["D4",null],["S",null],["S",null],["E",null]],"P03-99":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-100":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-101":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-102":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-103":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-104":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-105":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-106":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-107":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-108":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-109":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-110":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-111":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-112":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-113":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-114":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-115":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-116":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-117":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-118":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-119":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-120":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-121":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-122":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-123":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-124":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-125":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-126":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-127":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-128":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-129":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-130":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-131":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-132":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-133":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-134":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-135":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-136":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-137":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-138":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-139":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-140":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-141":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-142":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-143":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-144":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-145":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-146":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-147":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-148":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-149":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-150":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-151":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-152":[["E","2026-09-23"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-153":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-154":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E","2026-09-15"]],"P03-155":[["E","2026-09-23"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E","2026-09-01"]],"P03-156":[["E","2026-09-08"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6","2026-09-25"],["S","2026-09-24"],["S","2026-09-22"],["E","2026-08-28"]],"P03-157":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-158":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-159":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-160":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-161":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-162":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-163":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-164":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-165":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-166":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-167":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-168":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-169":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-170":[["E",null],["S","2026-08-22"],["S","2026-08-21"],["D6","2026-08-17"],["S","2026-08-14"],["S","2026-08-12"],["S","2026-08-10"],["D6","2026-08-08"],["S","2026-08-04"],["S","2026-08-02"],["E","2026-08-30"]],"P03-171":[["E",null],["S","2026-08-12"],["S","2026-08-10"],["D6","2026-08-07"],["S","2026-08-03"],["S","2026-07-31"],["S","2026-07-30"],["D6","2026-07-27"],["S","2026-07-25"],["S","2026-07-24"],["E","2026-09-05"]],"P03-172":[["E",null],["S","2026-08-22"],["S","2026-08-21"],["D6","2026-08-18"],["S","2026-08-16"],["S","2026-08-15"],["S","2026-08-14"],["D6","2026-08-12"],["S","2026-08-09"],["S","2026-08-08"],["E","2026-08-26"]],"P03-173":[["E",null],["S","2026-08-01"],["S","2026-07-31"],["D6","2026-07-27"],["S","2026-07-25"],["S","2026-07-24"],["S","2026-07-23"],["D6","2026-07-22"],["S","2026-07-16"],["S","2026-07-14"],["E","2026-09-08"]],"P03-174":[["E",null],["S","2026-07-22"],["S","2026-07-20"],["D6","2026-07-17"],["S","2026-07-15"],["S","2026-07-14"],["S","2026-07-13"],["D6","2026-07-01"],["S","2026-07-09"],["S","2026-07-07"],["E","2026-08-21"]],"P03-175":[["E",null],["S","2026-07-08"],["S","2026-07-07"],["D6","2026-07-06"],["S","2026-07-01"],["S","2026-06-29"],["S","2026-06-27"],["D6","2026-06-25"],["S","2026-06-23"],["S","2026-06-20"],["E","2026-09-13"]],"P03-176":[["E",null],["S","2026-07-13"],["S","2026-07-10"],["D6","2026-07-09"],["S","2026-07-07"],["S","2026-07-06"],["S","2026-07-03"],["D6","2026-07-01"],["S","2026-06-20"],["S","2026-06-15"],["E","2026-08-12"]],"P03-177":[["E","2026-08-24"],["S","2026-09-03"],["S","2026-09-02"],["D4","2026-08-31"],["S","2026-08-29"],["S","2026-08-28"],["D4","2026-08-26"],["S","2026-08-24"],["S","2026-08-23"],["E","2026-09-22"]],"P03-178":[["E","2026-09-11"],["S",null],["S",null],["D4",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-179":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S","2026-09-25"],["S","2026-09-23"],["S","2026-09-22"],["D6","2026-09-21"],["S","2026-09-19"],["S","2026-09-16"],["E",null]],"P03-180":[["E","2026-09-18"],["S","2026-08-31"],["S","2026-08-29"],["D4","2026-08-28"],["S","2026-08-26"],["S","2026-08-24"],["D4","2026-08-22"],["S","2026-08-15"],["S","2026-08-14"],["E","2026-08-15"]],"P03-181":[["E","2026-08-28"],["S",null],["S",null],["D4",null],["D4",null],["S",null],["S",null],["E",null]],"P03-182":[["E",null],["S","2026-09-15"],["S","2026-09-14"],["D6","2026-09-13"],["S","2026-09-10"],["S","2026-09-09"],["S","2026-09-08"],["S","2026-09-07"],["S","2026-09-06"],["D6","2026-09-04"],["S","2026-09-03"],["S","2026-09-01"],["E",null]],"P03-183":[["E","2026-08-14"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S","2026-09-25"],["S","2026-09-24"],["E",null]],"P03-184":[["E","2026-08-22"],["S","2026-09-21"],["S","2026-09-20"],["D6","2026-09-19"],["S","2026-09-16"],["S","2026-09-15"],["S","2026-09-14"],["S","2026-09-11"],["S","2026-09-10"],["D6","2026-09-09"],["S","2026-09-05"],["S","2026-09-04"],["E",null]],"P03-185":[["E","2026-08-03"],["S","2026-09-21"],["S","2026-09-18"],["D6","2026-09-14"],["S","2026-09-07"],["S","2026-09-05"],["S","2026-09-03"],["S","2026-09-01"],["S","2026-08-31"],["D6","2026-08-28"],["S","2026-08-25"],["S","2026-08-24"],["E","2026-08-09"]],"P03-186":[["E","2026-06-19"],["S","2026-06-19"],["S","2026-06-16"],["D6","2026-06-13"],["S","2026-06-09"],["S","2026-06-08"],["S","2026-06-06"],["D6","2026-06-03"],["S","2026-06-01"],["S","2026-05-23"],["E","2026-08-08"]],"P03-187":[["E","2026-06-06"],["S","2026-07-01"],["S","2026-06-26"],["D6","2026-06-23"],["S","2026-06-19"],["S","2026-06-16"],["S","2026-06-13"],["D6","2026-06-10"],["S","2026-06-02"],["S","2026-05-23"],["E","2026-06-25"]],"P03-188":[["E","2026-05-27"],["S","2026-05-07"],["S","2026-05-04"],["D6","2026-04-27"],["S","2026-04-20"],["S","2026-04-07"],["S","2026-04-03"],["D6","2026-03-30"],["S","2026-03-17"],["S","2026-03-13"],["E","2026-06-13"]],"P03-189":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-190":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"รวม":[]};
+const SEG_DATA = {"P03-39":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-40":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-41":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-42":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-43":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-44":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-45":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-46":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-47":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-48":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-49":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-50":[["E",null],["S",null],["S",null],["D4",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-51":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-52":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-53":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-54":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-55":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-56":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-57":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-58":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-59-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-59-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-60-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-60-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-61-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-61-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-62-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-62-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-63-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-63-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-64-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-64-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-65-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"P03-65-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-1-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-1-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-2-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-2-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-3-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-3-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-4-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-4-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-5-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-5-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-6-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-6-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-7-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-7-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-8-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-8-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-9-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-9-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-10-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-10-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-11-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-11-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-12-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-12-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-13-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-13-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-14-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-14-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-15-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-15-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-16-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-16-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-17-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"Sta.-17-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["H",null]],"P03-18-RT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-18-LT":[["H",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-66-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-66-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-67-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-67-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-68-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-68-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-69-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-69-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-70-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-70-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-71-RT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-71-LT":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-72":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-73":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-74":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-75":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-76":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-77":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-78":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-79":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-80":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-81":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-82":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-83":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-84":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-85":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-86":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-87":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-88":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-89":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-90":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-91":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-92":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-93":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-94":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-95":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-96":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-97":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-98":[["E",null],["S",null],["S",null],["D4",null],["D4",null],["S",null],["S",null],["E",null]],"P03-99":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-100":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-101":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-102":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-103":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-104":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-105":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-106":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-107":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-108":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-109":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-110":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-111":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-112":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-113":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-114":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-115":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-116":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-117":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-118":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-119":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-120":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-121":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-122":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-123":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-124":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-125":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-126":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-127":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-128":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-129":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-130":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-131":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-132":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-133":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-134":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-135":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-136":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-137":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-138":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-139":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-140":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-141":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-142":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E","2026-10-29"]],"P03-143":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-144":[["E","2026-10-29"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S","2026-10-31"],["S","2026-10-30"],["E","2026-10-24"]],"P03-145":[["E","2026-10-30"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E","2026-11-02"]],"P03-146":[["E","2026-10-26"],["S",null],["S",null],["D6","2026-11-02"],["S","2026-10-30"],["S","2026-10-28"],["S","2026-10-27"],["D6","2026-10-25"],["S","2026-10-22"],["S","2026-10-21"],["E","2026-10-19"]],"P03-147":[["E","2026-10-25"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S","2026-11-02"],["S","2026-10-31"],["E","2026-10-27"]],"P03-148":[["E","2026-10-20"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S","2026-11-02"],["D6","2026-10-30"],["S","2026-10-29"],["S","2026-10-28"],["E","2026-10-13"]],"P03-149":[["E","2026-10-22"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E","2026-10-20"]],"P03-150":[["E",null],["S","2026-10-30"],["S","2026-10-28"],["D6","2026-10-27"],["S","2026-10-26"],["S","2026-10-25"],["S","2026-10-24"],["D6","2026-10-22"],["S","2026-10-20"],["S","2026-10-19"],["E","2026-10-08"]],"P03-151":[["E","2026-10-17"],["S","2026-10-27"],["S","2026-10-26"],["D6","2026-10-24"],["S","2026-10-22"],["S","2026-10-21"],["S","2026-10-20"],["D6","2026-10-18"],["S","2026-10-13"],["S","2026-10-12"],["E","2026-10-13"]],"P03-152":[["E","2026-09-23"],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S","2026-11-02"],["E","2026-10-04"]],"P03-153":[["E","2026-09-29"],["S","2026-10-18"],["S","2026-10-14"],["D6","2026-10-12"],["S","2026-10-11"],["S","2026-10-10"],["S","2026-10-09"],["D6","2026-10-07"],["S","2026-10-06"],["S","2026-10-05"],["E",null]],"P03-154":[["E","2026-09-27"],["S","2026-10-11"],["S","2026-10-10"],["D6","2026-10-09"],["S","2026-10-08"],["S","2026-10-07"],["S","2026-10-06"],["D6","2026-10-05"],["S","2026-10-03"],["S","2026-10-01"],["E","2026-09-15"]],"P03-155":[["E","2026-09-23"],["S","2026-10-30"],["S","2026-10-29"],["D6","2026-10-28"],["S","2026-10-26"],["S","2026-10-24"],["S","2026-10-22"],["D6","2026-10-20"],["S","2026-10-17"],["S","2026-10-16"],["E","2026-09-01"]],"P03-156":[["E","2026-09-08"],["S","2026-10-04"],["S","2026-10-02"],["D6","2026-09-30"],["S","2026-09-29"],["S","2026-09-28"],["S","2026-09-27"],["D6","2026-09-25"],["S","2026-09-24"],["S","2026-09-22"],["E","2026-08-28"]],"P03-157":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-158":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-159":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-160":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-161":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-162":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-163":[["E",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["D4",null],["S",null],["S",null],["E",null]],"P03-164":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-165":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-166":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-167":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-168":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-169":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-170":[["E","2026-11-02"],["S","2026-08-22"],["S","2026-08-21"],["D6","2026-08-17"],["S","2026-08-14"],["S","2026-08-12"],["S","2026-08-10"],["D6","2026-08-08"],["S","2026-08-04"],["S","2026-08-02"],["E","2026-08-30"]],"P03-171":[["E","2026-10-28"],["S","2026-08-12"],["S","2026-08-10"],["D6","2026-08-07"],["S","2026-08-03"],["S","2026-07-31"],["S","2026-07-30"],["D6","2026-07-27"],["S","2026-07-25"],["S","2026-07-24"],["E","2026-09-05"]],"P03-172":[["E","2026-10-22"],["S","2026-08-22"],["S","2026-08-21"],["D6","2026-08-18"],["S","2026-08-16"],["S","2026-08-15"],["S","2026-08-14"],["D6","2026-08-12"],["S","2026-08-09"],["S","2026-08-08"],["E","2026-08-26"]],"P03-173":[["E","2026-10-13"],["S","2026-08-01"],["S","2026-07-31"],["D6","2026-07-27"],["S","2026-07-25"],["S","2026-07-24"],["S","2026-07-23"],["D6","2026-07-22"],["S","2026-07-16"],["S","2026-07-14"],["E","2026-09-08"]],"P03-174":[["E","2026-10-08"],["S","2026-07-22"],["S","2026-07-20"],["D6","2026-07-17"],["S","2026-07-15"],["S","2026-07-14"],["S","2026-07-13"],["D6","2026-07-01"],["S","2026-07-09"],["S","2026-07-07"],["E","2026-08-21"]],"P03-175":[["E","2026-10-05"],["S","2026-07-08"],["S","2026-07-07"],["D6","2026-07-06"],["S","2026-07-01"],["S","2026-06-29"],["S","2026-06-27"],["D6","2026-06-25"],["S","2026-06-23"],["S","2026-06-20"],["E","2026-09-13"]],"P03-176":[["E","2026-10-01"],["S","2026-07-13"],["S","2026-07-10"],["D6","2026-07-09"],["S","2026-07-07"],["S","2026-07-06"],["S","2026-07-03"],["D6","2026-07-01"],["S","2026-06-20"],["S","2026-06-15"],["E","2026-08-12"]],"P03-177":[["E","2026-08-24"],["S","2026-09-03"],["S","2026-09-02"],["D4","2026-08-31"],["S","2026-08-29"],["S","2026-08-28"],["D4","2026-08-26"],["S","2026-08-24"],["S","2026-08-23"],["E","2026-09-22"]],"P03-178":[["E","2026-09-11"],["S",null],["S",null],["D4",null],["S",null],["D4",null],["S",null],["S",null],["E","2026-10-02"]],"P03-179":[["E","2026-10-06"],["S","2026-09-30"],["S","2026-09-29"],["D6","2026-09-28"],["S","2026-09-27"],["S","2026-09-26"],["S","2026-09-25"],["S","2026-09-23"],["S","2026-09-22"],["D6","2026-09-21"],["S","2026-09-19"],["S","2026-09-16"],["E",null]],"P03-180":[["E","2026-09-18"],["S","2026-08-31"],["S","2026-08-29"],["D4","2026-08-28"],["S","2026-08-26"],["S","2026-08-24"],["D4","2026-08-22"],["S","2026-08-15"],["S","2026-08-14"],["E","2026-08-15"]],"P03-181":[["E","2026-08-28"],["S",null],["S",null],["D4",null],["D4",null],["S",null],["S",null],["E","2026-09-26"]],"P03-182":[["E",null],["S","2026-09-15"],["S","2026-09-14"],["D6","2026-09-13"],["S","2026-09-10"],["S","2026-09-09"],["S","2026-09-08"],["S","2026-09-07"],["S","2026-09-06"],["D6","2026-09-04"],["S","2026-09-03"],["S","2026-09-01"],["E",null]],"P03-183":[["E","2026-08-14"],["S","2026-10-15"],["S","2026-10-13"],["D6","2026-10-10"],["S","2026-10-07"],["S","2026-10-06"],["S","2026-10-05"],["S","2026-10-03"],["S","2026-10-01"],["D6","2026-09-29"],["S","2026-09-25"],["S","2026-09-24"],["E",null]],"P03-184":[["E","2026-08-22"],["S","2026-09-21"],["S","2026-09-20"],["D6","2026-09-19"],["S","2026-09-16"],["S","2026-09-15"],["S","2026-09-14"],["S","2026-09-11"],["S","2026-09-10"],["D6","2026-09-09"],["S","2026-09-05"],["S","2026-09-04"],["E","2026-10-09"]],"P03-185":[["E","2026-08-03"],["S","2026-09-21"],["S","2026-09-18"],["D6","2026-09-14"],["S","2026-09-07"],["S","2026-09-05"],["S","2026-09-03"],["S","2026-09-01"],["S","2026-08-31"],["D6","2026-08-28"],["S","2026-08-25"],["S","2026-08-24"],["E","2026-08-09"]],"P03-186":[["E","2026-06-19"],["S","2026-06-19"],["S","2026-06-16"],["D6","2026-06-13"],["S","2026-06-09"],["S","2026-06-08"],["S","2026-06-06"],["D6","2026-06-03"],["S","2026-06-01"],["S","2026-05-23"],["E","2026-08-08"]],"P03-187":[["E","2026-06-06"],["S","2026-07-01"],["S","2026-06-26"],["D6","2026-06-23"],["S","2026-06-19"],["S","2026-06-16"],["S","2026-06-13"],["D6","2026-06-10"],["S","2026-06-02"],["S","2026-05-23"],["E","2026-06-25"]],"P03-188":[["E","2026-05-27"],["S","2026-05-07"],["S","2026-05-04"],["D6","2026-04-27"],["S","2026-04-20"],["S","2026-04-07"],["S","2026-04-03"],["D6","2026-03-30"],["S","2026-03-17"],["S","2026-03-13"],["E","2026-06-13"]],"P03-189":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"P03-190":[["E",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["S",null],["D6",null],["S",null],["S",null],["E",null]],"รวม":[]};
 const SEG_STORED_KEY = 'railway_p03_seg_installed_v1';
 
 const SEG_TYPE_COLOR = {
@@ -4999,6 +5120,281 @@ function clearSegModal(spanId, idx) {
 
 function toggleSegInstalled(spanId, idx, stype, sdate) {
   openSegModal(spanId, idx, stype, sdate);
+}
+
+/* ══════════════════════════════════════════════
+   PDF IMPORT — อ่าน PDF วันหล่อแล้วอัพเดท SEG_DATA
+   ══════════════════════════════════════════════ */
+async function importSegmentPDF(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-4 right-4 z-50 bg-blue-700 text-white text-sm px-4 py-3 rounded-xl shadow-xl flex items-center gap-2';
+  toast.innerHTML = '<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> กำลังอ่าน PDF...';
+  document.body.appendChild(toast);
+
+  try {
+    if (!window.pdfjsLib) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    function beToISO(s) {
+      const m = s && s.match(/(\d{1,2})\/(\d{2})\/(\d{2,4})/);
+      if (!m) return null;
+      let [, d, mo, y] = m.map(Number);
+      if (y < 100) y += 2500;
+      y -= 543;
+      return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    }
+
+    // Extract all lines from all pages with X,Y positions
+    let allLines = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const rowMap = {};
+      for (const item of content.items) {
+        if (!item.str.trim()) continue;
+        const y = Math.round(item.transform[5]);
+        if (!rowMap[y]) rowMap[y] = [];
+        rowMap[y].push({ x: item.transform[4], str: item.str.trim() });
+      }
+      const ys = Object.keys(rowMap).map(Number).sort((a,b)=>b-a);
+      for (const y of ys) {
+        allLines.push({ y, items: rowMap[y].sort((a,b)=>a.x-b.x) });
+      }
+    }
+
+    // Find header row to get column X boundaries (numbers 1,2,3...10+)
+    let colBoundaries = [];
+    for (const line of allLines) {
+      const numItems = line.items.filter(i => /^\d{1,2}$/.test(i.str));
+      const nums = numItems.map(i => parseInt(i.str));
+      if (nums.length >= 10 && nums[0] === 1) {
+        colBoundaries = numItems.map(i => i.x);
+        break;
+      }
+    }
+    if (!colBoundaries.length) throw new Error('ไม่พบ header ของตาราง — ตรวจสอบว่าเป็น PDF ถูกรูปแบบ');
+
+    function xToColIdx(x) {
+      let best = -1, bestDist = Infinity;
+      for (let i = 0; i < colBoundaries.length; i++) {
+        const d = Math.abs(x - colBoundaries[i]);
+        if (d < bestDist) { bestDist = d; best = i; }
+      }
+      return bestDist < 40 ? best : -1;
+    }
+
+    // Parse each data row
+    const datePattern = /^\d{1,2}\/\d{2}\/\d{2,4}$/;
+    const spanPattern = /^(P03-\d+|Sta\.-\d+)/;
+    const updatedMap = {};
+
+    for (const line of allLines) {
+      const spanItem = line.items.find(i => spanPattern.test(i.str));
+      if (!spanItem) continue;
+      const spanId = spanItem.str.trim();
+      const dates = line.items.filter(i => datePattern.test(i.str));
+      if (!dates.length) continue;
+      const segDates = {};
+      for (const di of dates) {
+        const colIdx = xToColIdx(di.x);
+        if (colIdx >= 0) segDates[colIdx] = beToISO(di.str);
+      }
+      if (Object.keys(segDates).length) updatedMap[spanId] = segDates;
+    }
+
+    // Apply to runtime SEG_DATA
+    let count = 0;
+    for (const [spanId, datemap] of Object.entries(updatedMap)) {
+      if (!SEG_DATA[spanId]) continue;
+      for (const [idxStr, isoDate] of Object.entries(datemap)) {
+        const idx = parseInt(idxStr);
+        if (idx < SEG_DATA[spanId].length && isoDate) {
+          SEG_DATA[spanId][idx][1] = isoDate;
+          count++;
+        }
+      }
+    }
+
+    toast.remove();
+    const spans = Object.keys(updatedMap).filter(s => SEG_DATA[s]).length;
+    const done = document.createElement('div');
+    done.className = 'fixed bottom-4 right-4 z-50 bg-green-700 text-white text-sm px-4 py-3 rounded-xl shadow-xl';
+    done.innerHTML = `✅ อัพเดทแล้ว ${spans} Span · ${count} วันหล่อ`;
+    document.body.appendChild(done);
+    setTimeout(() => done.remove(), 4000);
+
+    renderSegmentTab();
+    const planView = document.getElementById('view-plan');
+    if (planView && !planView.classList.contains('hidden')) renderPlanView();
+
+  } catch(err) {
+    toast.remove();
+    alert('❌ เกิดข้อผิดพลาด: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ===================== POT BEARING =====================
+const BRG_KEY = 'railway_p03_bearing_v1';
+
+const PIER_ZONES = {
+  'E': ['P03-1','P03-2','P03-3','P03-4','P03-5','P03-6','P03-7','P03-8','P03-9','P03-10',
+        'P03-11','P03-12','P03-13','P03-14','P03-15','P03-16','P03-17','P03-18','P03-19','P03-20',
+        'P03-21','P03-22','P03-23','P03-24','P03-25','P03-26','P03-27','P03-28','P03-29','P03-30',
+        'P03-31','P03-32','P03-33','P03-34','P03-35','P03-36','P03-37','P03-38','P03-39','P03-40',
+        'P03-41','P03-42','P03-43','P03-44','P03-45','P03-46','P03-47','P03-48','P03-49','P03-50',
+        'P03-51','P03-52','P03-53','P03-54','P03-55','P03-56','P03-57','P03-58','P03-59','P03-60',
+        'P03-61','P03-62','P03-63','P03-64'],
+  'D': ['P03-65','P03-66'],
+  'C': ['P03-67','P03-68','P03-69','P03-70','P03-71','P03-72','P03-73','P03-74','P03-75','P03-76',
+        'P03-77','P03-78','P03-79','P03-80','P03-81','P03-82','P03-83','P03-84','P03-85','P03-86',
+        'P03-87','P03-88','P03-89','P03-90','P03-91','P03-92','P03-93','P03-94','P03-95','P03-96',
+        'P03-97','P03-98','P03-99','P03-100','P03-101','P03-102','P03-103','P03-104','P03-105','P03-106',
+        'P03-107','P03-108','P03-109','P03-110','P03-111','P03-112','P03-113','P03-114','P03-115','P03-116',
+        'P03-117','P03-118','P03-119','P03-120','P03-121','P03-122','P03-123','P03-124','P03-125','P03-126',
+        'P03-127','P03-128','P03-129'],
+  'B': ['P03-130','P03-131','P03-132','P03-133','P03-134','P03-135','P03-136','P03-137','P03-138','P03-139',
+        'P03-140','P03-141','P03-142','P03-143','P03-144','P03-145','P03-146','P03-147','P03-148','P03-149',
+        'P03-150','P03-151','P03-152','P03-153','P03-154','P03-155','P03-156','P03-157','P03-158','P03-159',
+        'P03-160','P03-161','P03-162','P03-163','P03-164'],
+  'A': ['P03-165','P03-166','P03-167','P03-168','P03-169','P03-170','P03-171','P03-172','P03-173','P03-174',
+        'P03-175','P03-176','P03-177','P03-178','P03-179','P03-180','P03-181','P03-182','P03-183','P03-184',
+        'P03-185','P03-186','P03-187','P03-188','P03-189']
+};
+
+const ZONE_COLORS_BRG = { E:'#dc2626', D:'#7c3aed', C:'#d97706', B:'#0284c7', A:'#16a34a' };
+
+function loadBearingData() {
+  try { return JSON.parse(localStorage.getItem(BRG_KEY) || '{}'); } catch { return {}; }
+}
+function saveBearingData(data) {
+  localStorage.setItem(BRG_KEY, JSON.stringify(data));
+}
+
+let _brgCurrentPier = null;
+
+function openBearingModal(pier) {
+  _brgCurrentPier = pier;
+  const data = loadBearingData();
+  const rec = data[pier] || {};
+  document.getElementById('brg-modal-pier').textContent = pier;
+  document.getElementById('brg-top-date').value = rec.top || '';
+  document.getElementById('brg-bot-date').value = rec.bot || '';
+  document.getElementById('brg-modal').classList.remove('hidden');
+}
+
+function clearBrgDate(which) {
+  document.getElementById(which === 'top' ? 'brg-top-date' : 'brg-bot-date').value = '';
+}
+
+function saveBearing() {
+  if (!_brgCurrentPier) return;
+  const data = loadBearingData();
+  const top = document.getElementById('brg-top-date').value;
+  const bot = document.getElementById('brg-bot-date').value;
+  if (!top && !bot) {
+    delete data[_brgCurrentPier];
+  } else {
+    data[_brgCurrentPier] = { top: top || '', bot: bot || '' };
+  }
+  saveBearingData(data);
+  document.getElementById('brg-modal').classList.add('hidden');
+  renderBearingTab();
+}
+
+function formatBrgDate(iso) {
+  if (!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  const months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${parseInt(d)} ${months[parseInt(m)]} ${parseInt(y)+543}`;
+}
+
+function renderBearingTab() {
+  const data = loadBearingData();
+  const zoneFilter = document.getElementById('brg-zone-filter')?.value || 'ALL';
+  const statusFilter = document.getElementById('brg-status-filter')?.value || 'ALL';
+
+  let piers = [];
+  for (const [zone, list] of Object.entries(PIER_ZONES)) {
+    if (zoneFilter !== 'ALL' && zone !== zoneFilter) continue;
+    for (const p of list) piers.push({ pier: p, zone });
+  }
+
+  piers = piers.filter(({ pier }) => {
+    const rec = data[pier] || {};
+    const cnt = (rec.top ? 1 : 0) + (rec.bot ? 1 : 0);
+    if (statusFilter === 'done') return cnt === 2;
+    if (statusFilter === 'partial') return cnt === 1;
+    if (statusFilter === 'none') return cnt === 0;
+    return true;
+  });
+
+  const allPiers = Object.values(PIER_ZONES).flat();
+  const totalDone = allPiers.filter(p => { const r=data[p]||{}; return r.top&&r.bot; }).length;
+  const totalPartial = allPiers.filter(p => { const r=data[p]||{}; return (r.top?1:0)+(r.bot?1:0)===1; }).length;
+  const sumEl = document.getElementById('brg-summary');
+  if (sumEl) sumEl.innerHTML =
+    `รวม ${allPiers.length} เสา · <span class="text-green-600 font-semibold">ครบ ${totalDone}</span> · <span class="text-amber-500 font-semibold">บางส่วน ${totalPartial}</span> · <span class="text-slate-400">ยังไม่ติดตั้ง ${allPiers.length - totalDone - totalPartial}</span>`;
+
+  const tbody = document.getElementById('brg-tbody');
+  if (!tbody) return;
+  let html = '';
+  let prevZone = null;
+
+  piers.forEach(({ pier, zone }, i) => {
+    const rec = data[pier] || {};
+    const topDone = !!rec.top;
+    const botDone = !!rec.bot;
+    const both = topDone && botDone;
+    const none = !topDone && !botDone;
+
+    if (zone !== prevZone) {
+      prevZone = zone;
+      const zcolor = ZONE_COLORS_BRG[zone] || '#64748b';
+      html += `<tr><td colspan="4" class="px-3 py-1.5 text-xs font-bold text-white" style="background:${zcolor}">Zone ${zone}</td></tr>`;
+    }
+
+    const rowBg = i % 2 === 0 ? 'background:#fff' : 'background:#f8fafc';
+    const statusBadge = both
+      ? '<span style="font-size:11px;background:#dcfce7;color:#15803d;font-weight:700;padding:2px 8px;border-radius:999px">✅ ครบ</span>'
+      : !none
+        ? '<span style="font-size:11px;background:#fef9c3;color:#a16207;font-weight:700;padding:2px 8px;border-radius:999px">⚠️ บางส่วน</span>'
+        : '<span style="font-size:11px;background:#f1f5f9;color:#94a3b8;padding:2px 8px;border-radius:999px">—</span>';
+
+    html += `<tr style="${rowBg};border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="openBearingModal('${pier}')" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#f8fafc'}'">
+      <td style="padding:10px 12px;font-size:12px;font-weight:600;color:#334155">${pier}</td>
+      <td style="padding:10px 12px;text-align:center">
+        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${topDone?'#22c55e':'#cbd5e1'};margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:12px;color:${topDone?'#15803d':'#94a3b8'};font-weight:${topDone?'600':'400'}">${formatBrgDate(rec.top)}</span>
+      </td>
+      <td style="padding:10px 12px;text-align:center">
+        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${botDone?'#f59e0b':'#cbd5e1'};margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:12px;color:${botDone?'#92400e':'#94a3b8'};font-weight:${botDone?'600':'400'}">${formatBrgDate(rec.bot)}</span>
+      </td>
+      <td style="padding:10px 12px;text-align:center">${statusBadge}</td>
+    </tr>`;
+  });
+
+  if (!piers.length) {
+    html = `<tr><td colspan="4" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px">ไม่พบข้อมูล</td></tr>`;
+  }
+
+  tbody.innerHTML = html;
 }
 
 </script>
