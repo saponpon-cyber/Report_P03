@@ -58,6 +58,7 @@ th{position:sticky;top:0;z-index:2}
       <button id="tab-plan" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('plan')"><i data-lucide="map" class="w-4 h-4"></i>Plan View</button>
       <button id="tab-payment" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('payment')"><i data-lucide="file-text" class="w-4 h-4"></i>Payment</button>
       <button id="tab-segment" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('segment')"><i data-lucide="grid-3x3" class="w-4 h-4"></i>Segment</button>
+      <button id="tab-bearing" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('bearing')">🛞 Pot Bearing</button>
     </div>
   </div>
 </header>
@@ -948,6 +949,36 @@ th{position:sticky;top:0;z-index:2}
   <div id="seg-grid" class="space-y-1"></div>
 </div>
 
+<!-- ===== POT BEARING VIEW ===== -->
+<div id="view-bearing" class="hidden p-3 sm:p-5 max-w-7xl mx-auto space-y-4">
+  <div class="flex flex-wrap items-center gap-3 mb-2">
+    <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">🛞 Pot Bearing — P03</h2>
+    <div class="flex gap-2 ml-auto flex-wrap items-center">
+      <select id="brg-zone-filter" class="border rounded px-2 py-1 text-xs" onchange="renderBearingTab()">
+        <option value="ALL">ทุก Zone</option>
+        <option value="E">Zone E</option>
+        <option value="D">Zone D</option>
+        <option value="C">Zone C</option>
+        <option value="B">Zone B</option>
+        <option value="A">Zone A</option>
+      </select>
+      <select id="brg-status-filter" class="border rounded px-2 py-1 text-xs" onchange="renderBearingTab()">
+        <option value="ALL">ทุกสถานะ</option>
+        <option value="done">ครบ (Top+Bot)</option>
+        <option value="partial">บางส่วน</option>
+        <option value="none">ยังไม่ติดตั้ง</option>
+      </select>
+      <select id="brg-view-mode" class="border rounded px-2 py-1 text-xs" onchange="renderBearingTab()">
+        <option value="table">📋 ตาราง</option>
+        <option value="calendar">📅 ปฏิทิน</option>
+      </select>
+    </div>
+  </div>
+  <!-- Summary -->
+  <div id="brg-summary" class="text-sm text-slate-600 bg-slate-50 rounded-xl px-4 py-2 border"></div>
+  <!-- Main content area (table or calendar) -->
+  <div id="brg-main-content"></div>
+</div>
 
 </main>
 </div><!-- end app wrapper -->
@@ -1453,7 +1484,7 @@ function showToast(msg,color='green'){
 
 // ===================== TABS =====================
 function switchTab(tab){
-  ['dashboard','record','piles','history','calendar','plan','payment','segment'].forEach(t=>{
+  ['dashboard','record','piles','history','calendar','plan','payment','segment','bearing'].forEach(t=>{
     const view=document.getElementById('view-'+t);
     if(view) view.classList.toggle('hidden',t!==tab);
     const btn=document.getElementById('tab-'+t);
@@ -1466,6 +1497,7 @@ function switchTab(tab){
   if(tab==='dashboard')updateDashboard();
   if(tab==='payment')renderPayTimeline();
   if(tab==='segment')renderSegmentTab();
+  if(tab==='bearing')renderBearingTab();
 }
 
 
@@ -5293,13 +5325,48 @@ function openBearingModal(pier) {
   const data = loadBearingData();
   const rec = data[pier] || {};
   document.getElementById('brg-modal-pier').textContent = pier;
-  document.getElementById('brg-top-date').value = rec.top || '';
-  document.getElementById('brg-bot-date').value = rec.bot || '';
+  // Latest date (from history array or legacy string)
+  const topHist = Array.isArray(rec.topHist) ? rec.topHist : (rec.top ? [{date:rec.top,note:''}] : []);
+  const botHist = Array.isArray(rec.botHist) ? rec.botHist : (rec.bot ? [{date:rec.bot,note:''}] : []);
+  const latestTop = topHist.length ? topHist[topHist.length-1].date : '';
+  const latestBot = botHist.length ? botHist[botHist.length-1].date : '';
+  document.getElementById('brg-top-date').value = latestTop;
+  document.getElementById('brg-bot-date').value = latestBot;
+  // Render history
+  const renderHist = (hist, el) => {
+    if (!hist.length) { el.innerHTML = '<span class="text-gray-400 italic">ยังไม่มีประวัติ</span>'; return; }
+    el.innerHTML = hist.slice().reverse().map((h,i) =>
+      `<div class="flex justify-between items-center py-0.5 border-b border-gray-100">
+        <span>${i===0?'🟢 ล่าสุด: ':''}<strong>${formatBrgDate(h.date)}</strong>${h.note?` — ${h.note}`:''}</span>
+        <button onclick="deleteBrgHistory('${pier}','${h.side}',${hist.length-1-i})" class="text-red-400 hover:text-red-600 text-xs ml-2">✕</button>
+      </div>`
+    ).join('');
+  };
+  topHist.forEach(h=>h.side='top');
+  botHist.forEach(h=>h.side='bot');
+  renderHist(topHist, document.getElementById('brg-top-history'));
+  renderHist(botHist, document.getElementById('brg-bot-history'));
   document.getElementById('brg-modal').classList.remove('hidden');
 }
 
 function clearBrgDate(which) {
   document.getElementById(which === 'top' ? 'brg-top-date' : 'brg-bot-date').value = '';
+}
+
+function deleteBrgHistory(pier, side, idx) {
+  const data = loadBearingData();
+  if (!data[pier]) return;
+  const key = side === 'top' ? 'topHist' : 'botHist';
+  if (!Array.isArray(data[pier][key])) return;
+  data[pier][key].splice(idx, 1);
+  if (!data[pier].topHist?.length && !data[pier].botHist?.length) delete data[pier];
+  else {
+    data[pier].top = data[pier].topHist?.slice(-1)[0]?.date || '';
+    data[pier].bot = data[pier].botHist?.slice(-1)[0]?.date || '';
+  }
+  saveBearingData(data);
+  openBearingModal(pier);
+  renderBearingTab();
 }
 
 function saveBearing() {
@@ -5310,11 +5377,20 @@ function saveBearing() {
   if (!top && !bot) {
     delete data[_brgCurrentPier];
   } else {
-    data[_brgCurrentPier] = { top: top || '', bot: bot || '' };
+    if (!data[_brgCurrentPier]) data[_brgCurrentPier] = { top:'', bot:'', topHist:[], botHist:[] };
+    const rec = data[_brgCurrentPier];
+    if (!Array.isArray(rec.topHist)) rec.topHist = rec.top ? [{date:rec.top,note:''}] : [];
+    if (!Array.isArray(rec.botHist)) rec.botHist = rec.bot ? [{date:rec.bot,note:''}] : [];
+    // Add new entry if date changed or new
+    if (top && top !== rec.top) { rec.topHist.push({date:top, note:'', side:'top'}); rec.top = top; }
+    if (bot && bot !== rec.bot) { rec.botHist.push({date:bot, note:'', side:'bot'}); rec.bot = bot; }
+    if (!top) { rec.top = ''; rec.topHist = []; }
+    if (!bot) { rec.bot = ''; rec.botHist = []; }
   }
   saveBearingData(data);
   document.getElementById('brg-modal').classList.add('hidden');
   renderBearingTab();
+  if(document.getElementById('view-plan')&&!document.getElementById('view-plan').classList.contains('hidden'))renderPlanView();
 }
 
 function formatBrgDate(iso) {
@@ -5328,6 +5404,7 @@ function renderBearingTab() {
   const data = loadBearingData();
   const zoneFilter = document.getElementById('brg-zone-filter')?.value || 'ALL';
   const statusFilter = document.getElementById('brg-status-filter')?.value || 'ALL';
+  const viewMode = document.getElementById('brg-view-mode')?.value || 'table';
 
   let piers = [];
   for (const [zone, list] of Object.entries(PIER_ZONES)) {
@@ -5349,56 +5426,242 @@ function renderBearingTab() {
   const totalPartial = allPiers.filter(p => { const r=data[p]||{}; return (r.top?1:0)+(r.bot?1:0)===1; }).length;
   const sumEl = document.getElementById('brg-summary');
   if (sumEl) sumEl.innerHTML =
-    `รวม ${allPiers.length} เสา · <span class="text-green-600 font-semibold">ครบ ${totalDone}</span> · <span class="text-amber-500 font-semibold">บางส่วน ${totalPartial}</span> · <span class="text-slate-400">ยังไม่ติดตั้ง ${allPiers.length - totalDone - totalPartial}</span>`;
+    `รวม ${allPiers.length} เสา · <span style="color:#15803d;font-weight:700">✅ ครบ ${totalDone}</span> · <span style="color:#d97706;font-weight:700">⚠️ บางส่วน ${totalPartial}</span> · <span style="color:#94a3b8">— ยังไม่ติดตั้ง ${allPiers.length - totalDone - totalPartial}</span>`;
 
-  const tbody = document.getElementById('brg-tbody');
-  if (!tbody) return;
-  let html = '';
+  const container = document.getElementById('brg-main-content');
+  if (!container) return;
+
+  if (viewMode === 'calendar') {
+    renderBearingCalendar(container, data);
+  } else {
+    renderBearingTable(container, data, piers);
+  }
+}
+
+function renderBearingTable(container, data, piers) {
+  let html = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:#f1f5f9;border-bottom:2px solid #e2e8f0">
+      <th style="padding:10px 12px;text-align:left;font-weight:700;color:#475569">เสา</th>
+      <th style="padding:10px 12px;text-align:center;color:#15803d">🟢 Top Bearing</th>
+      <th style="padding:10px 12px;text-align:center;color:#b45309">🟡 Bottom Bearing</th>
+      <th style="padding:10px 12px;text-align:center;color:#475569">สถานะ</th>
+    </tr></thead><tbody>`;
+
   let prevZone = null;
-
   piers.forEach(({ pier, zone }, i) => {
     const rec = data[pier] || {};
     const topDone = !!rec.top;
     const botDone = !!rec.bot;
     const both = topDone && botDone;
     const none = !topDone && !botDone;
+    const topHist = Array.isArray(rec.topHist) ? rec.topHist : (rec.top?[{date:rec.top}]:[]);
+    const botHist = Array.isArray(rec.botHist) ? rec.botHist : (rec.bot?[{date:rec.bot}]:[]);
 
     if (zone !== prevZone) {
       prevZone = zone;
       const zcolor = ZONE_COLORS_BRG[zone] || '#64748b';
-      html += `<tr><td colspan="4" class="px-3 py-1.5 text-xs font-bold text-white" style="background:${zcolor}">Zone ${zone}</td></tr>`;
+      html += `<tr><td colspan="4" style="padding:6px 12px;font-size:11px;font-weight:700;color:#fff;background:${zcolor}">Zone ${zone}</td></tr>`;
     }
 
-    const rowBg = i % 2 === 0 ? 'background:#fff' : 'background:#f8fafc';
+    const rowBg = i % 2 === 0 ? '#fff' : '#f8fafc';
     const statusBadge = both
       ? '<span style="font-size:11px;background:#dcfce7;color:#15803d;font-weight:700;padding:2px 8px;border-radius:999px">✅ ครบ</span>'
       : !none
         ? '<span style="font-size:11px;background:#fef9c3;color:#a16207;font-weight:700;padding:2px 8px;border-radius:999px">⚠️ บางส่วน</span>'
         : '<span style="font-size:11px;background:#f1f5f9;color:#94a3b8;padding:2px 8px;border-radius:999px">—</span>';
 
-    html += `<tr style="${rowBg};border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="openBearingModal('${pier}')" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#f8fafc'}'">
-      <td style="padding:10px 12px;font-size:12px;font-weight:600;color:#334155">${pier}</td>
+    const topStr = topDone
+      ? `${formatBrgDate(rec.top)}${topHist.length>1?' <span style="font-size:10px;color:#9ca3af">('+topHist.length+' ครั้ง)</span>':''}`
+      : '—';
+    const botStr = botDone
+      ? `${formatBrgDate(rec.bot)}${botHist.length>1?' <span style="font-size:10px;color:#9ca3af">('+botHist.length+' ครั้ง)</span>':''}`
+      : '—';
+
+    html += `<tr style="background:${rowBg};border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="openBearingModal('${pier}')" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowBg}'">
+      <td style="padding:10px 12px;font-weight:600;color:#334155">${pier}</td>
       <td style="padding:10px 12px;text-align:center">
-        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${topDone?'#22c55e':'#cbd5e1'};margin-right:6px;vertical-align:middle"></span>
-        <span style="font-size:12px;color:${topDone?'#15803d':'#94a3b8'};font-weight:${topDone?'600':'400'}">${formatBrgDate(rec.top)}</span>
+        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${topDone?'#22c55e':'#cbd5e1'};margin-right:5px;vertical-align:middle"></span>
+        <span style="color:${topDone?'#15803d':'#94a3b8'};font-weight:${topDone?'600':'400'}">${topStr}</span>
       </td>
       <td style="padding:10px 12px;text-align:center">
-        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${botDone?'#f59e0b':'#cbd5e1'};margin-right:6px;vertical-align:middle"></span>
-        <span style="font-size:12px;color:${botDone?'#92400e':'#94a3b8'};font-weight:${botDone?'600':'400'}">${formatBrgDate(rec.bot)}</span>
+        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${botDone?'#f59e0b':'#cbd5e1'};margin-right:5px;vertical-align:middle"></span>
+        <span style="color:${botDone?'#92400e':'#94a3b8'};font-weight:${botDone?'600':'400'}">${botStr}</span>
       </td>
       <td style="padding:10px 12px;text-align:center">${statusBadge}</td>
     </tr>`;
   });
 
   if (!piers.length) {
-    html = `<tr><td colspan="4" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px">ไม่พบข้อมูล</td></tr>`;
+    html += `<tr><td colspan="4" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px">ไม่พบข้อมูล</td></tr>`;
+  }
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function renderBearingCalendar(container, data, calYear, calMonth) {
+  // Collect all events {pier, side} keyed by date string
+  const events = {};
+  for (const [pier, rec] of Object.entries(data)) {
+    const addEv = (hist, raw, side) => {
+      const arr = Array.isArray(hist) ? hist : (raw ? [{date:raw}] : []);
+      for (const h of arr) {
+        if (!h || !h.date) continue;
+        if (!events[h.date]) events[h.date] = [];
+        events[h.date].push({ pier, side });
+      }
+    };
+    addEv(rec.topHist, rec.top, 'top');
+    addEv(rec.botHist, rec.bot, 'bot');
   }
 
-  tbody.innerHTML = html;
+  const allDates = Object.keys(events).sort();
+  const now = new Date();
+  let year = calYear !== undefined ? calYear : now.getFullYear();
+  let month = calMonth !== undefined ? calMonth : now.getMonth();
+  if (calYear === undefined && allDates.length) {
+    const last = allDates[allDates.length-1].split('-');
+    year = parseInt(last[0]); month = parseInt(last[1])-1;
+  }
+
+  const monthNames = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = now.toISOString().slice(0,10);
+
+  let html = `<div style="max-width:720px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <button onclick="shiftBrgCal(-1,${year},${month})" style="padding:5px 14px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;font-size:14px">◀</button>
+      <span style="font-weight:700;font-size:16px;color:#334155;flex:1;text-align:center">${monthNames[month]} ${year+543}</span>
+      <button onclick="shiftBrgCal(1,${year},${month})" style="padding:5px 14px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;font-size:14px">▶</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px">
+      ${['อา','จ','อ','พ','พฤ','ศ','ส'].map(d=>`<div style="text-align:center;font-size:11px;font-weight:700;color:#94a3b8;padding:4px 2px">${d}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
+
+  for (let i=0; i<firstDay; i++) html += `<div style="min-height:62px"></div>`;
+
+  for (let d=1; d<=daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs = events[dateStr] || [];
+    const topEvs = evs.filter(e=>e.side==='top');
+    const botEvs = evs.filter(e=>e.side==='bot');
+    const isToday = dateStr === todayStr;
+    const bg = evs.length ? (topEvs.length&&botEvs.length ? '#d1fae5' : topEvs.length ? '#dcfce7' : '#fef9c3') : (isToday?'#eff6ff':'#fff');
+    const border = isToday ? '2px solid #3b82f6' : '1px solid #e2e8f0';
+
+    html += `<div style="background:${bg};border:${border};border-radius:8px;padding:4px 5px;min-height:62px;cursor:${evs.length?'pointer':'default'}" ${evs.length?`onclick="showBrgDayDetail('${dateStr}')"`:''}>
+      <div style="font-size:12px;font-weight:${isToday?'700':'500'};color:${isToday?'#3b82f6':'#334155'};margin-bottom:2px">${d}</div>
+      ${topEvs.map(e=>`<div style="font-size:9px;background:#22c55e;color:#fff;border-radius:4px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Top-${e.pier}</div>`).join('')}
+      ${botEvs.map(e=>`<div style="font-size:9px;background:#f59e0b;color:#fff;border-radius:4px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bot-${e.pier}</div>`).join('')}
+    </div>`;
+  }
+  html += `</div></div>`;
+
+  // History list sorted newest first
+  if (allDates.length) {
+    const histItems = allDates.slice().reverse().flatMap(date =>
+      (events[date]||[]).map(e => ({date, pier:e.pier, side:e.side}))
+    );
+    html += `<div style="margin-top:20px"><h3 style="font-weight:700;color:#334155;margin-bottom:8px;font-size:14px">📋 ประวัติการติดตั้งทั้งหมด (${histItems.length} รายการ)</h3>
+    <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">`;
+    histItems.slice(0,60).forEach((item,i) => {
+      const bg = i%2===0?'#fff':'#f8fafc';
+      const dot = item.side==='top' ? '#22c55e' : '#f59e0b';
+      const label = item.side==='top' ? 'Top' : 'Bottom';
+      const badgeBg = item.side==='top' ? '#dcfce7' : '#fef9c3';
+      const badgeColor = item.side==='top' ? '#15803d' : '#92400e';
+      html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:${bg};border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="openBearingModal('${item.pier}')">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0"></span>
+        <span style="font-weight:600;color:#334155;font-size:12px;min-width:70px">${item.pier}</span>
+        <span style="font-size:11px;background:${badgeBg};color:${badgeColor};border-radius:999px;padding:1px 8px">${label}</span>
+        <span style="font-size:12px;color:#64748b;margin-left:auto">${formatBrgDate(item.date)}</span>
+      </div>`;
+    });
+    if (histItems.length > 60) {
+      html += `<div style="text-align:center;padding:8px;color:#94a3b8;font-size:12px">... และอีก ${histItems.length-60} รายการ</div>`;
+    }
+    html += `</div></div>`;
+  } else {
+    html += `<div style="margin-top:20px;text-align:center;color:#94a3b8;font-size:13px;padding:20px">ยังไม่มีข้อมูลการติดตั้ง</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function shiftBrgCal(dir, year, month) {
+  let m = month + dir;
+  let y = year;
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  const data = loadBearingData();
+  const container = document.getElementById('brg-main-content');
+  if (!container) return;
+  renderBearingCalendar(container, data, y, m);
+}
+
+function showBrgDayDetail(dateStr) {
+  const data = loadBearingData();
+  const items = [];
+  for (const [pier, rec] of Object.entries(data)) {
+    const checkHist = (hist, raw, side) => {
+      const arr = Array.isArray(hist) ? hist : (raw?[{date:raw}]:[]);
+      if (arr.some(h=>h&&h.date===dateStr)) items.push({pier, side});
+    };
+    checkHist(rec.topHist, rec.top, 'top');
+    checkHist(rec.botHist, rec.bot, 'bot');
+  }
+  if (!items.length) return;
+  alert(`วันที่ ${formatBrgDate(dateStr)}\n\nรายการ Pot Bearing:\n` + items.map(it=>`• ${it.pier} — ${it.side==='top'?'Top':'Bottom'}`).join('\n'));
 }
 
 </script>
 
+<!-- ===== POT BEARING MODAL ===== -->
+<div id="brg-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.5)">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+    <div class="bg-gradient-to-r from-teal-700 to-teal-500 px-5 py-3 flex items-center justify-between">
+      <div>
+        <div class="text-white font-bold text-sm">🛞 Pot Bearing — <span id="brg-modal-pier"></span></div>
+        <div class="text-teal-100 text-xs mt-0.5">บันทึกวันติดตั้ง Pot Bearing</div>
+      </div>
+      <button onclick="document.getElementById('brg-modal').classList.add('hidden')" class="text-white opacity-70 hover:opacity-100 text-xl leading-none">✕</button>
+    </div>
+    <div class="px-5 py-4 space-y-4">
+      <!-- Top Bearing -->
+      <div class="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+          <span class="text-sm font-bold text-green-800">Top Pot Bearing</span>
+        </div>
+        <div class="flex gap-2 items-center">
+          <input type="date" id="brg-top-date" class="flex-1 px-2 py-1.5 border border-green-300 rounded-lg text-sm focus:ring-2 focus:ring-green-400 focus:outline-none">
+          <button onclick="clearBrgDate('top')" class="text-xs text-gray-400 hover:text-red-500 px-2">✕</button>
+        </div>
+        <!-- History -->
+        <div id="brg-top-history" class="text-xs text-gray-500 space-y-1 max-h-24 overflow-y-auto"></div>
+      </div>
+      <!-- Bottom Bearing -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
+          <span class="text-sm font-bold text-amber-800">Bottom Pot Bearing</span>
+        </div>
+        <div class="flex gap-2 items-center">
+          <input type="date" id="brg-bot-date" class="flex-1 px-2 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none">
+          <button onclick="clearBrgDate('bot')" class="text-xs text-gray-400 hover:text-red-500 px-2">✕</button>
+        </div>
+        <!-- History -->
+        <div id="brg-bot-history" class="text-xs text-gray-500 space-y-1 max-h-24 overflow-y-auto"></div>
+      </div>
+      <!-- Action buttons -->
+      <div class="flex gap-3 pt-1">
+        <button onclick="document.getElementById('brg-modal').classList.add('hidden')" class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition text-sm">ยกเลิก</button>
+        <button onclick="saveBearing()" class="flex-1 py-2.5 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition text-sm">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
