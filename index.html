@@ -58,7 +58,6 @@ th{position:sticky;top:0;z-index:2}
       <button id="tab-plan" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('plan')"><i data-lucide="map" class="w-4 h-4"></i>Plan View</button>
       <button id="tab-payment" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('payment')"><i data-lucide="file-text" class="w-4 h-4"></i>Payment</button>
       <button id="tab-segment" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('segment')"><i data-lucide="grid-3x3" class="w-4 h-4"></i>Segment</button>
-      <button id="tab-bearing" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('bearing')">🛞 Pot Bearing</button>
     </div>
   </div>
 </header>
@@ -400,31 +399,6 @@ th{position:sticky;top:0;z-index:2}
         </div>
       </div>
 
-      <!-- Pot Bearing sub-form (hidden unless cat=Pot Bearing) -->
-      <div id="brg-fields" class="hidden space-y-3 bg-teal-50 border border-teal-200 rounded-xl p-4">
-        <h3 class="text-sm font-bold text-teal-800 flex items-center gap-2">🛞 บันทึก Pot Bearing</h3>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-1">📍 เสา (Pier)</label>
-          <select id="r-brg-pier" class="w-full px-3 py-2.5 border border-teal-300 rounded-xl text-sm bg-white">
-            <option value="">-- เลือกเสา --</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 mb-2">ตำแหน่ง Pot Bearing</label>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 cursor-pointer bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 flex-1">
-              <input type="checkbox" id="r-brg-top" class="w-4 h-4 accent-green-600">
-              <span class="text-sm font-semibold text-green-800">🟢 Top (บน)</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 flex-1">
-              <input type="checkbox" id="r-brg-bot" class="w-4 h-4 accent-amber-500">
-              <span class="text-sm font-semibold text-amber-800">🟡 Bottom (ล่าง)</span>
-            </label>
-          </div>
-        </div>
-        <p class="text-xs text-teal-600">📅 วันที่ใช้จากฟิลด์ "วันที่" ด้านบน</p>
-      </div>
-
       <!-- Remarks -->
       <div><label class="block text-xs font-semibold text-gray-600 mb-1">หมายเหตุ</label>
         <textarea id="r-remarks" class="w-full px-3 py-3 border border-gray-300 rounded-xl text-sm" rows="2" placeholder="ข้อมูลเพิ่มเติม"></textarea></div>
@@ -515,6 +489,7 @@ th{position:sticky;top:0;z-index:2}
           <option value="Column / Crossbeam">Column / Crossbeam</option>
           <option value="Cable Trough">Cable Trough</option>
           <option value="Concrete Barrier">Concrete Barrier</option>
+          <option value="Pot Bearing">Pot Bearing</option>
         </select>
         <!-- Export buttons -->
         <div class="flex gap-2 flex-wrap">
@@ -567,6 +542,8 @@ th{position:sticky;top:0;z-index:2}
         <button onclick="nextMonth()" class="p-2.5 hover:bg-blue-50 rounded-lg transition text-blue-600"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
       </div>
     </div>
+    <!-- ตัวกรองหมวดในปฏิทิน -->
+    <div id="cal-filter" class="flex flex-wrap gap-1.5 mb-3"></div>
     <div class="grid grid-cols-7 gap-1 mb-1 sm:gap-1.5 sm:mb-2">
       <div class="text-center text-xs font-bold text-red-500">อา.</div>
       <div class="text-center text-xs font-bold text-gray-600">จ.</div>
@@ -683,8 +660,8 @@ th{position:sticky;top:0;z-index:2}
       <!-- Pot Bearing legend -->
       <span class="w-px h-4 bg-gray-300 mx-1 inline-block"></span>
       <span class="font-semibold text-gray-500">🛞 Bearing:</span>
-      <span class="flex items-center gap-1"><span class="flex gap-0.5 items-center"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22c55e;border:1px solid #15803d"></span><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22c55e;border:1px solid #15803d"></span></span><span>Top ติดแล้ว</span></span>
-      <span class="flex items-center gap-1"><span class="flex gap-0.5 items-center"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#f59e0b;border:1px solid #b45309"></span><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#f59e0b;border:1px solid #b45309"></span></span><span>Bottom ติดแล้ว</span></span>
+      <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22c55e;border:1px solid #15803d"></span><span>Top</span></span>
+      <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#f59e0b;border:1px solid #b45309"></span><span>Bottom</span></span>
     </div>
   </div>
   <!-- Canvas wrapper -->
@@ -949,42 +926,6 @@ th{position:sticky;top:0;z-index:2}
   <div id="seg-grid" class="space-y-1"></div>
 </div>
 
-<!-- ===== POT BEARING VIEW ===== -->
-<div id="view-bearing" class="hidden p-3 sm:p-5 max-w-7xl mx-auto space-y-4">
-  <div class="flex flex-wrap items-center gap-3 mb-2">
-    <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">🛞 Pot Bearing — P03</h2>
-    <div class="flex gap-2 ml-auto flex-wrap items-center">
-      <select id="brg-zone-filter" class="border rounded px-2 py-1 text-xs" onchange="renderBearingTab()">
-        <option value="ALL">ทุก Zone</option>
-        <option value="E">Zone E</option>
-        <option value="D">Zone D</option>
-        <option value="C">Zone C</option>
-        <option value="B">Zone B</option>
-        <option value="A">Zone A</option>
-      </select>
-      <select id="brg-status-filter" class="border rounded px-2 py-1 text-xs" onchange="renderBearingTab()">
-        <option value="ALL">ทุกสถานะ</option>
-        <option value="done">ครบ (Top+Bot)</option>
-        <option value="partial">บางส่วน</option>
-        <option value="none">ยังไม่ติดตั้ง</option>
-      </select>
-      <select id="brg-view-mode" class="border rounded px-2 py-1 text-xs" onchange="renderBearingTab()">
-        <option value="table">📋 ตาราง</option>
-        <option value="calendar">📅 ปฏิทิน</option>
-      </select>
-    </div>
-  </div>
-  <!-- Google Sheets Sync Bar -->
-  <div class="flex flex-wrap items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-sm">
-    <span class="text-green-700 font-semibold">🔗 Sync กับ Google Sheets</span>
-    <button onclick="pullFromSheet()" class="bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-green-700 whitespace-nowrap">⬇️ ดึงข้อมูลล่าสุด</button>
-    <span id="brg-sync-status" class="text-xs text-slate-500 ml-auto"></span>
-  </div>
-  <!-- Summary -->
-  <div id="brg-summary" class="text-sm text-slate-600 bg-slate-50 rounded-xl px-4 py-2 border"></div>
-  <!-- Main content area (table or calendar) -->
-  <div id="brg-main-content"></div>
-</div>
 
 </main>
 </div><!-- end app wrapper -->
@@ -1490,7 +1431,7 @@ function showToast(msg,color='green'){
 
 // ===================== TABS =====================
 function switchTab(tab){
-  ['dashboard','record','piles','history','calendar','plan','payment','segment','bearing'].forEach(t=>{
+  ['dashboard','record','piles','history','calendar','plan','payment','segment'].forEach(t=>{
     const view=document.getElementById('view-'+t);
     if(view) view.classList.toggle('hidden',t!==tab);
     const btn=document.getElementById('tab-'+t);
@@ -1503,7 +1444,6 @@ function switchTab(tab){
   if(tab==='dashboard')updateDashboard();
   if(tab==='payment')renderPayTimeline();
   if(tab==='segment')renderSegmentTab();
-  if(tab==='bearing'){ initBrgSyncBar(); renderBearingTab(); }
 }
 
 
@@ -2509,11 +2449,11 @@ function renderZoneCards(){
 }
 
 function renderSummaryTable() {
-  const cats=['Bored Pile','Static Pile Load Test','Dynamic Pile Load Test','Sonic Logging Test','Footing','Column / Crossbeam','Cable Trough','Concrete Barrier'];
+  const cats=['Bored Pile','Static Pile Load Test','Dynamic Pile Load Test','Sonic Logging Test','Footing','Column / Crossbeam','Cable Trough','Concrete Barrier','Pot Bearing'];
   const catColors={
     'Bored Pile':'bg-indigo-500','Static Pile Load Test':'bg-cyan-500','Dynamic Pile Load Test':'bg-teal-500',
     'Sonic Logging Test':'bg-sky-500','Footing':'bg-emerald-500','Column / Crossbeam':'bg-purple-500',
-    'Cable Trough':'bg-amber-500','Concrete Barrier':'bg-orange-500'
+    'Cable Trough':'bg-amber-500','Concrete Barrier':'bg-orange-500','Pot Bearing':'bg-teal-600'
   };
   let html='';
   cats.forEach(cat=>{
@@ -2553,7 +2493,6 @@ function onCatChange(){
   const sel=document.getElementById('r-item');
   document.getElementById('bp-fields').classList.add('hidden');
   document.getElementById('anc-fields').classList.add('hidden');
-  document.getElementById('brg-fields').classList.add('hidden');
   document.getElementById('anc-top-casing').value='';
   document.getElementById('anc-cutoff').value='';
   document.getElementById('anc-soil').value='';
@@ -2561,28 +2500,17 @@ function onCatChange(){
   document.getElementById('pile-selector').classList.add('hidden');
   if(!cat){sel.innerHTML='<option value="">-- เลือกหมวดงานก่อน --</option>';sel.disabled=true;return;}
 
-  // Pot Bearing: แสดง sub-form พิเศษ ซ่อน item dropdown
+  // Pot Bearing: แสดง item dropdown มาตรฐาน (Top / Bottom) + พิมพ์ Pier ID เหมือน Footing
   if(cat==='Pot Bearing'){
-    sel.innerHTML='<option value="brg-bearing">Pot Bearing Installation</option>';
-    sel.disabled=true;
+    sel.innerHTML='<option value="">-- เลือกตำแหน่ง --</option><option value="Top">🟢 Top (บน)</option><option value="Bottom">🟡 Bottom (ล่าง)</option>';
+    sel.disabled=false;
     document.getElementById('r-unit').value='ตำแหน่ง';
-    document.getElementById('brg-fields').classList.remove('hidden');
-    // populate pier dropdown
-    const pierSel=document.getElementById('r-brg-pier');
-    const data=loadBearingData();
-    let opts='<option value="">-- เลือกเสา --</option>';
-    for(const [zone,list] of Object.entries(PIER_ZONES)){
-      const zcolor=ZONE_COLORS_BRG[zone]||'#64748b';
-      opts+=`<optgroup label="Zone ${zone}">`;
-      list.forEach(p=>{
-        const r=data[p]||{};
-        const done=(r.top?1:0)+(r.bot?1:0);
-        const mark=done===2?'✅':done===1?'⚠️':'';
-        opts+=`<option value="${p}">${mark} ${p}</option>`;
-      });
-      opts+='</optgroup>';
-    }
-    pierSel.innerHTML=opts;
+    // ใช้ text input (r-loc) เหมือน Footing — ไม่แสดง pile-selector
+    document.getElementById('pile-selector').classList.add('hidden');
+    const locText=document.getElementById('r-loc');
+    const locSelect=document.getElementById('r-loc-select');
+    if(locText){ locText.classList.remove('hidden'); locText.placeholder='เช่น P03-40'; }
+    if(locSelect) locSelect.classList.add('hidden');
     return;
   }
 
@@ -2778,48 +2706,28 @@ function submitRecord(){
   const concrete=parseFloat(document.getElementById('r-concrete').value)||0;
   const pin=document.getElementById('r-pin').value;
 
-  // --- Pot Bearing: บันทึกแยก (ไม่ใช้ records array)
-  if(cat==='Pot Bearing'){
-    if(pin!==PIN_RECORD){showToast('รหัส PIN ไม่ถูกต้อง','red');document.getElementById('r-pin').value='';return;}
-    const pier=document.getElementById('r-brg-pier').value;
-    const doTop=document.getElementById('r-brg-top').checked;
-    const doBot=document.getElementById('r-brg-bot').checked;
-    if(!pier){showToast('กรุณาเลือกเสา','red');return;}
-    if(!doTop&&!doBot){showToast('กรุณาเลือกตำแหน่ง Top หรือ Bottom','red');return;}
-    if(!date){showToast('กรุณาเลือกวันที่','red');return;}
-    const data=loadBearingData();
-    if(!data[pier]) data[pier]={top:'',bot:''};
-    if(doTop) data[pier].top=date;
-    if(doBot) data[pier].bot=date;
-    saveBearingData(data);
-    showToast(`บันทึก Pot Bearing ${pier} สำเร็จ! 🛞`,'green');
-    // reset bearing form
-    document.getElementById('r-cat').value='';
-    document.getElementById('r-brg-pier').value='';
-    document.getElementById('r-brg-top').checked=false;
-    document.getElementById('r-brg-bot').checked=false;
-    document.getElementById('r-pin').value='';
-    document.getElementById('brg-fields').classList.add('hidden');
-    document.getElementById('r-item').innerHTML='<option value="">-- เลือกหมวดงานก่อน --</option>';
-    document.getElementById('r-item').disabled=true;
-    if(document.getElementById('view-plan')&&!document.getElementById('view-plan').classList.contains('hidden'))renderPlanView();
-    return;
-  }
-
-  if(!date||!user||!cat||!itemId||qty<1){showToast('กรุณากรอกข้อมูลให้ครบ','red');return;}
+  const needQty = cat!=='Pot Bearing';
+  if(!date||!user||!cat||!itemId||(needQty&&qty<1)){showToast('กรุณากรอกข้อมูลให้ครบ','red');return;}
+  // Pot Bearing: ตรวจว่าระบุ Pier ID ใน location แล้ว
+  if(cat==='Pot Bearing'&&!loc){showToast('กรุณาระบุ Pier ID ในช่อง Location เช่น P03-40','red');return;}
   if(pin!==PIN_RECORD){showToast('รหัส PIN ไม่ถูกต้อง','red');document.getElementById('r-pin').value='';return;}
 
   const inv=INVENTORY.find(i=>i.id===itemId);
+  // Pot Bearing: item_id = 'Top' | 'Bottom', item_name ใช้ตรงๆ
+  const itemName = cat==='Pot Bearing' ? (itemId==='Top'?'🟢 Top Pot Bearing':'🟡 Bottom Pot Bearing') : (inv?inv.name:itemId);
   // สำหรับ Sonic/Dynamic — pile_id = ค่าที่เลือกจาก dropdown (loc)
   const isTestCat = cat==='Sonic Logging Test'||cat==='Dynamic Pile Load Test';
-  const pileId = isTestCat
+  // Pot Bearing: pile_id คือ loc (text input เหมือน Footing)
+  const pileId = (cat==='Pot Bearing')
     ? (loc||null)
-    : (document.getElementById('r-pile-id').value||null);
+    : isTestCat
+      ? (loc||null)
+      : (document.getElementById('r-pile-id').value||null);
 
   const rec={
     id:Date.now().toString(),
     date,user,category:cat,
-    item_id:itemId,item_name:inv.name,
+    item_id:itemId,item_name:itemName,
     pile_id:pileId,
     location:loc||'-',qty,
     concrete_volume:concrete,
@@ -2877,7 +2785,6 @@ function submitRecord(){
   document.getElementById('r-pile-id').innerHTML='<option value="">-- เลือก AXIS ก่อน --</option>';
   document.getElementById('r-pile-id').disabled=true;
   document.getElementById('bp-fields').classList.add('hidden');
-  document.getElementById('brg-fields').classList.add('hidden');
   document.getElementById('pile-selector').classList.add('hidden');
   document.getElementById('pile-status-badge').classList.add('hidden');
   document.getElementById('r-unit').value='';
@@ -2950,7 +2857,7 @@ function renderHistory(){
     document.getElementById('hist-tbody').innerHTML='<tr><td colspan="15" class="text-center py-8 text-gray-400">ยังไม่มีข้อมูล</td></tr>';
     return;
   }
-  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Lean Concrete':'bg-yellow-100 text-yellow-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700'};
+  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Lean Concrete':'bg-yellow-100 text-yellow-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700','Pot Bearing':'bg-teal-100 text-teal-700'};
   let html='';
   filtered.forEach(r=>{
     const cc=catColors[r.category]||'bg-gray-100 text-gray-700';
@@ -3081,7 +2988,36 @@ function confirmDelete(){
 document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmDelete();});
 
 // ===================== CALENDAR =====================
+// ── ตัวกรองหมวดในปฏิทิน ──────────────────────────────
+const CAL_FILTER_GROUPS=[
+  {key:'bp',  label:'Bored Pile',     on:'bg-indigo-600 text-white border-indigo-600',  match:r=>r.category==='Bored Pile'},
+  {key:'ft',  label:'Lean + Footing', on:'bg-emerald-600 text-white border-emerald-600', match:r=>r.category==='Footing'||r.category==='Lean Concrete'},
+  {key:'col', label:'Column',         on:'bg-purple-600 text-white border-purple-600',  match:r=>r.category==='Column / Crossbeam'&&r.item_id==='col-col'},
+  {key:'brg', label:'Pot Bearing',    on:'bg-teal-600 text-white border-teal-600',      match:r=>r.category==='Pot Bearing'}
+];
+let calFilter=new Set(); // ว่าง = แสดงทั้งหมด
+function toggleCalFilter(key){
+  if(key==='all') calFilter.clear();
+  else if(calFilter.has(key)) calFilter.delete(key);
+  else calFilter.add(key);
+  renderCalendar();
+}
+function calRecPass(r){
+  if(!calFilter.size) return true;
+  return CAL_FILTER_GROUPS.some(g=>calFilter.has(g.key)&&g.match(r));
+}
+function renderCalFilter(){
+  const box=document.getElementById('cal-filter'); if(!box) return;
+  const off='bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+  let h=`<button onclick="toggleCalFilter('all')" class="px-3 py-1.5 text-xs font-semibold rounded-full border transition ${!calFilter.size?'bg-blue-600 text-white border-blue-600':off}">ทั้งหมด</button>`;
+  CAL_FILTER_GROUPS.forEach(g=>{
+    h+=`<button onclick="toggleCalFilter('${g.key}')" class="px-3 py-1.5 text-xs font-semibold rounded-full border transition ${calFilter.has(g.key)?g.on:off}">${g.label}</button>`;
+  });
+  box.innerHTML=h;
+}
+
 function renderCalendar(){
+  renderCalFilter();
   const yr=calDate.getFullYear(),mo=calDate.getMonth();
   const thMonths=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   document.getElementById('cal-month-label').textContent=`${thMonths[mo]} ${yr+543}`;
@@ -3091,22 +3027,31 @@ function renderCalendar(){
   let html='';
   for(let i=0;i<firstDow;i++)html+='<div class="min-h-24 bg-gray-50 rounded-xl"></div>';
   // สีประจำหมวดงาน (ตรงกับหน้าประวัติ)
-  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Lean Concrete':'bg-yellow-100 text-yellow-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700'};
+  const catColors={'Bored Pile':'bg-indigo-100 text-indigo-700','Footing':'bg-emerald-100 text-emerald-700','Column / Crossbeam':'bg-purple-100 text-purple-700','Static Pile Load Test':'bg-cyan-100 text-cyan-700','Dynamic Pile Load Test':'bg-teal-100 text-teal-700','Sonic Logging Test':'bg-sky-100 text-sky-700','Lean Concrete':'bg-yellow-100 text-yellow-700','Cable Trough':'bg-amber-100 text-amber-700','Concrete Barrier':'bg-orange-100 text-orange-700','Pot Bearing':'bg-teal-100 text-teal-700'};
   const evtLabel=(r)=>{ let name=r.category, pos='';
-    if(r.category==='Column / Crossbeam'){ name=(r.item_id==='col-col')?'Column':'Crossbeam';
+    if(r.category==='Column / Crossbeam'){
+      if(r.item_id==='col-col'){
+        const stepName={kicker:'Kicker',shaft:'Shaft',head:'Head'}[String(r.pile_id||'').toLowerCase()];
+        name=stepName?(stepName+'-Column'):'Column';
+      } else name='Crossbeam';
       pos=(r.location&&r.location!=='-')?r.location:''; }
     else if(r.category==='Bored Pile'){ pos=r.pile_id || (r.location||''); }
+    else if(r.category==='Pot Bearing'){ name=(r.item_id==='Top'?'TOP':'BOT')+'-Pot'; pos=r.pile_id||r.location||''; }
     else { pos=(r.location&&r.location!=='-')?r.location:''; }
     pos=String(pos).replace(/\s*STA.*$/i,'').trim(); // ตัดส่วน STA... ออก
     return pos ? (name+' '+pos) : name; };
+  // สีตามสถานะ Plan view: Top = เขียว, Bottom = ส้ม
+  const evtColor=(r)=> r.category==='Pot Bearing'
+    ? (r.item_id==='Top'?'bg-green-100 text-green-700 border border-green-400':'bg-amber-100 text-amber-700 border border-amber-400')
+    : (catColors[r.category]||'bg-gray-100 text-gray-700');
   for(let d=1;d<=daysInMo;d++){
     const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dayRecs=records.filter(r=>r.date===ds);
+    const dayRecs=records.filter(r=>r.date===ds&&calRecPass(r));
     const isToday=ds===today();
     html+=`<div class="min-h-24 rounded-xl border ${isToday?'border-blue-500 border-2':'border-gray-200'} p-1.5 cursor-pointer hover:shadow-md transition ${dayRecs.length?'bg-blue-50':'bg-white'}" onclick="showDayModal('${ds}')">
       <div class="text-sm font-bold ${isToday?'text-blue-600':'text-gray-700'} mb-1">${d}</div>
       <div class="space-y-0.5 overflow-hidden">
-        ${dayRecs.slice(0,3).map(r=>`<div class="text-xs px-1 py-0.5 rounded ${catColors[r.category]||'bg-gray-100 text-gray-700'} truncate font-medium" title="${evtLabel(r)}">${evtLabel(r)}</div>`).join('')}
+        ${dayRecs.slice(0,3).map(r=>`<div class="text-xs px-1 py-0.5 rounded ${evtColor(r)} truncate font-medium" title="${evtLabel(r)}">${evtLabel(r)}</div>`).join('')}
         ${dayRecs.length>3?`<div class="text-xs text-blue-500 font-semibold">+${dayRecs.length-3} อื่นๆ</div>`:''}
       </div>
     </div>`;
@@ -4193,18 +4138,18 @@ function renderPlanView() {
       svg += `<rect x="${(xSub-shaftW/2).toFixed(1)}" y="${yS0}" width="${shaftW}" height="${shaftH}" fill="${cShaft}" stroke="#334155" stroke-width="1.2"/>`;
       svg += `<rect x="${(xSub-kickW/2).toFixed(1)}" y="${yK0}" width="${kickW}" height="${kickH}" fill="${cKick}" stroke="#334155" stroke-width="1.2"/>`;
       if (colRec) svg += `<text x="${xSub}" y="${(yS0+shaftH/2+3).toFixed(1)}" text-anchor="middle" font-size="5.5" font-weight="700" fill="${colSteps.shaft?'#fff':'#475569'}">COL</text>`;
-      // Pot Bearing: 2 rows of circles in BRG_GAP zone
-      // Top row (green) near Segment bottom, Bottom row (amber) near pier head top
-      {const _brgAll=loadBearingData();const _brgId=ax.replace(/-LT$|-RT$|-L$|-R$/,'');const _brgRec=_brgAll[_brgId]||{};
-      const _r = 4;   // circle radius
-      // BRG_GAP=16px; split evenly: Top at 1/4 from top, Bottom at 3/4 from top
-      const _cyTop = yH0 - 16 + 4;   // near Segment bottom
-      const _cyBot = yH0 - 4;        // near pier head top (gap between rows)
-      // x positions: left and right circles, symmetric around pier center
+      // Pot Bearing: 2 rows of circles — read from records array (category='Pot Bearing', item_id='Top'|'Bottom', pile_id=pierKey)
+      {const _brgId=ax.replace(/-LT$|-RT$|-L$|-R$/,'');
+      const _brgRecs=records.filter(r=>r.category==='Pot Bearing'&&r.pile_id===_brgId);
+      const _hasTop=_brgRecs.some(r=>r.item_id==='Top');
+      const _hasBot=_brgRecs.some(r=>r.item_id==='Bottom');
+      const _r = 4;
+      const _cyTop = yH0 - 16 + 4;
+      const _cyBot = yH0 - 4;
       const _cx1 = xSub - _r - 2;
       const _cx2 = xSub + _r + 2;
       // Top circles (green)
-      if(_brgRec.top){
+      if(_hasTop){
         svg+=`<circle cx="${_cx1.toFixed(1)}" cy="${_cyTop.toFixed(1)}" r="${_r}" fill="#22c55e" stroke="#15803d" stroke-width="0.8"/>`;
         svg+=`<circle cx="${_cx2.toFixed(1)}" cy="${_cyTop.toFixed(1)}" r="${_r}" fill="#22c55e" stroke="#15803d" stroke-width="0.8"/>`;
       } else {
@@ -4212,7 +4157,7 @@ function renderPlanView() {
         svg+=`<circle cx="${_cx2.toFixed(1)}" cy="${_cyTop.toFixed(1)}" r="${_r}" fill="none" stroke="#86efac" stroke-width="0.8" stroke-dasharray="2,1"/>`;
       }
       // Bottom circles (amber)
-      if(_brgRec.bot){
+      if(_hasBot){
         svg+=`<circle cx="${_cx1.toFixed(1)}" cy="${_cyBot.toFixed(1)}" r="${_r}" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/>`;
         svg+=`<circle cx="${_cx2.toFixed(1)}" cy="${_cyBot.toFixed(1)}" r="${_r}" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/>`;
       } else {
@@ -5287,40 +5232,6 @@ async function importSegmentPDF(input) {
   }
 }
 
-// ===================== POT BEARING =====================
-const BRG_KEY = 'railway_p03_bearing_v1';
-
-// ===================== POT BEARING — GOOGLE SHEETS SYNC =====================
-// ใช้ GAS_URL เดิม (Script เดียวกับระบบบันทึกข้อมูล) action=get_bearing / set_bearing
-
-async function syncFromSheet() {
-  try {
-    const res = await fetch(GAS_URL + '?action=get_bearing&t=' + Date.now(), {cache:'no-store'});
-    const json = await res.json();
-    if (json && json.data) {
-      localStorage.setItem(BRG_KEY, JSON.stringify(json.data));
-      return json.data;
-    }
-  } catch(e) { console.warn('Bearing sync from sheet failed', e); }
-  return null;
-}
-
-async function syncToSheet(data) {
-  try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'set_bearing', data })
-    });
-  } catch(e) { console.warn('Bearing sync to sheet failed', e); }
-}
-
-function showSyncStatus(msg, color) {
-  const el = document.getElementById('brg-sync-status');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = color || '#64748b';
-}
-
 const PIER_ZONES = {
   'E': ['P03-1','P03-2','P03-3','P03-4','P03-5','P03-6','P03-7','P03-8','P03-9','P03-10',
         'P03-11','P03-12','P03-13','P03-14','P03-15','P03-16','P03-17','P03-18','P03-19','P03-20',
@@ -5346,381 +5257,9 @@ const PIER_ZONES = {
         'P03-185','P03-186','P03-187','P03-188','P03-189']
 };
 
-const ZONE_COLORS_BRG = { E:'#dc2626', D:'#7c3aed', C:'#d97706', B:'#0284c7', A:'#16a34a' };
-
-function loadBearingData() {
-  try { return JSON.parse(localStorage.getItem(BRG_KEY) || '{}'); } catch { return {}; }
-}
-function saveBearingData(data) {
-  localStorage.setItem(BRG_KEY, JSON.stringify(data));
-  if (BRG_SHEET_URL) {
-    showSyncStatus('⏳ กำลัง sync...', '#d97706');
-    syncToSheet(data).then(() => showSyncStatus('✅ Sync แล้ว', '#15803d'))
-      .catch(() => showSyncStatus('⚠️ Sync ไม่สำเร็จ', '#dc2626'));
-  }
-}
-
-let _brgCurrentPier = null;
-
-function openBearingModal(pier) {
-  _brgCurrentPier = pier;
-  const data = loadBearingData();
-  const rec = data[pier] || {};
-  document.getElementById('brg-modal-pier').textContent = pier;
-  // Latest date (from history array or legacy string)
-  const topHist = Array.isArray(rec.topHist) ? rec.topHist : (rec.top ? [{date:rec.top,note:''}] : []);
-  const botHist = Array.isArray(rec.botHist) ? rec.botHist : (rec.bot ? [{date:rec.bot,note:''}] : []);
-  const latestTop = topHist.length ? topHist[topHist.length-1].date : '';
-  const latestBot = botHist.length ? botHist[botHist.length-1].date : '';
-  document.getElementById('brg-top-date').value = latestTop;
-  document.getElementById('brg-bot-date').value = latestBot;
-  // Render history
-  const renderHist = (hist, el) => {
-    if (!hist.length) { el.innerHTML = '<span class="text-gray-400 italic">ยังไม่มีประวัติ</span>'; return; }
-    el.innerHTML = hist.slice().reverse().map((h,i) =>
-      `<div class="flex justify-between items-center py-0.5 border-b border-gray-100">
-        <span>${i===0?'🟢 ล่าสุด: ':''}<strong>${formatBrgDate(h.date)}</strong>${h.note?` — ${h.note}`:''}</span>
-        <button onclick="deleteBrgHistory('${pier}','${h.side}',${hist.length-1-i})" class="text-red-400 hover:text-red-600 text-xs ml-2">✕</button>
-      </div>`
-    ).join('');
-  };
-  topHist.forEach(h=>h.side='top');
-  botHist.forEach(h=>h.side='bot');
-  renderHist(topHist, document.getElementById('brg-top-history'));
-  renderHist(botHist, document.getElementById('brg-bot-history'));
-  document.getElementById('brg-modal').classList.remove('hidden');
-}
-
-function clearBrgDate(which) {
-  document.getElementById(which === 'top' ? 'brg-top-date' : 'brg-bot-date').value = '';
-}
-
-function deleteBrgHistory(pier, side, idx) {
-  const data = loadBearingData();
-  if (!data[pier]) return;
-  const key = side === 'top' ? 'topHist' : 'botHist';
-  if (!Array.isArray(data[pier][key])) return;
-  data[pier][key].splice(idx, 1);
-  if (!data[pier].topHist?.length && !data[pier].botHist?.length) delete data[pier];
-  else {
-    data[pier].top = data[pier].topHist?.slice(-1)[0]?.date || '';
-    data[pier].bot = data[pier].botHist?.slice(-1)[0]?.date || '';
-  }
-  saveBearingData(data);
-  openBearingModal(pier);
-  renderBearingTab();
-}
-
-function saveBearing() {
-  if (!_brgCurrentPier) return;
-  const data = loadBearingData();
-  const top = document.getElementById('brg-top-date').value;
-  const bot = document.getElementById('brg-bot-date').value;
-  if (!top && !bot) {
-    delete data[_brgCurrentPier];
-  } else {
-    if (!data[_brgCurrentPier]) data[_brgCurrentPier] = { top:'', bot:'', topHist:[], botHist:[] };
-    const rec = data[_brgCurrentPier];
-    if (!Array.isArray(rec.topHist)) rec.topHist = rec.top ? [{date:rec.top,note:''}] : [];
-    if (!Array.isArray(rec.botHist)) rec.botHist = rec.bot ? [{date:rec.bot,note:''}] : [];
-    // Add new entry if date changed or new
-    if (top && top !== rec.top) { rec.topHist.push({date:top, note:'', side:'top'}); rec.top = top; }
-    if (bot && bot !== rec.bot) { rec.botHist.push({date:bot, note:'', side:'bot'}); rec.bot = bot; }
-    if (!top) { rec.top = ''; rec.topHist = []; }
-    if (!bot) { rec.bot = ''; rec.botHist = []; }
-  }
-  saveBearingData(data);
-  document.getElementById('brg-modal').classList.add('hidden');
-  renderBearingTab();
-  if(document.getElementById('view-plan')&&!document.getElementById('view-plan').classList.contains('hidden'))renderPlanView();
-}
-
-function formatBrgDate(iso) {
-  if (!iso) return '—';
-  const [y,m,d] = iso.split('-');
-  const months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  return `${parseInt(d)} ${months[parseInt(m)]} ${parseInt(y)+543}`;
-}
-
-function renderBearingTab() {
-  const data = loadBearingData();
-  const zoneFilter = document.getElementById('brg-zone-filter')?.value || 'ALL';
-  const statusFilter = document.getElementById('brg-status-filter')?.value || 'ALL';
-  const viewMode = document.getElementById('brg-view-mode')?.value || 'table';
-
-  let piers = [];
-  for (const [zone, list] of Object.entries(PIER_ZONES)) {
-    if (zoneFilter !== 'ALL' && zone !== zoneFilter) continue;
-    for (const p of list) piers.push({ pier: p, zone });
-  }
-
-  piers = piers.filter(({ pier }) => {
-    const rec = data[pier] || {};
-    const cnt = (rec.top ? 1 : 0) + (rec.bot ? 1 : 0);
-    if (statusFilter === 'done') return cnt === 2;
-    if (statusFilter === 'partial') return cnt === 1;
-    if (statusFilter === 'none') return cnt === 0;
-    return true;
-  });
-
-  const allPiers = Object.values(PIER_ZONES).flat();
-  const totalDone = allPiers.filter(p => { const r=data[p]||{}; return r.top&&r.bot; }).length;
-  const totalPartial = allPiers.filter(p => { const r=data[p]||{}; return (r.top?1:0)+(r.bot?1:0)===1; }).length;
-  const sumEl = document.getElementById('brg-summary');
-  if (sumEl) sumEl.innerHTML =
-    `รวม ${allPiers.length} เสา · <span style="color:#15803d;font-weight:700">✅ ครบ ${totalDone}</span> · <span style="color:#d97706;font-weight:700">⚠️ บางส่วน ${totalPartial}</span> · <span style="color:#94a3b8">— ยังไม่ติดตั้ง ${allPiers.length - totalDone - totalPartial}</span>`;
-
-  const container = document.getElementById('brg-main-content');
-  if (!container) return;
-
-  if (viewMode === 'calendar') {
-    renderBearingCalendar(container, data);
-  } else {
-    renderBearingTable(container, data, piers);
-  }
-}
-
-function renderBearingTable(container, data, piers) {
-  let html = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr style="background:#f1f5f9;border-bottom:2px solid #e2e8f0">
-      <th style="padding:10px 12px;text-align:left;font-weight:700;color:#475569">เสา</th>
-      <th style="padding:10px 12px;text-align:center;color:#15803d">🟢 Top Bearing</th>
-      <th style="padding:10px 12px;text-align:center;color:#b45309">🟡 Bottom Bearing</th>
-      <th style="padding:10px 12px;text-align:center;color:#475569">สถานะ</th>
-    </tr></thead><tbody>`;
-
-  let prevZone = null;
-  piers.forEach(({ pier, zone }, i) => {
-    const rec = data[pier] || {};
-    const topDone = !!rec.top;
-    const botDone = !!rec.bot;
-    const both = topDone && botDone;
-    const none = !topDone && !botDone;
-    const topHist = Array.isArray(rec.topHist) ? rec.topHist : (rec.top?[{date:rec.top}]:[]);
-    const botHist = Array.isArray(rec.botHist) ? rec.botHist : (rec.bot?[{date:rec.bot}]:[]);
-
-    if (zone !== prevZone) {
-      prevZone = zone;
-      const zcolor = ZONE_COLORS_BRG[zone] || '#64748b';
-      html += `<tr><td colspan="4" style="padding:6px 12px;font-size:11px;font-weight:700;color:#fff;background:${zcolor}">Zone ${zone}</td></tr>`;
-    }
-
-    const rowBg = i % 2 === 0 ? '#fff' : '#f8fafc';
-    const statusBadge = both
-      ? '<span style="font-size:11px;background:#dcfce7;color:#15803d;font-weight:700;padding:2px 8px;border-radius:999px">✅ ครบ</span>'
-      : !none
-        ? '<span style="font-size:11px;background:#fef9c3;color:#a16207;font-weight:700;padding:2px 8px;border-radius:999px">⚠️ บางส่วน</span>'
-        : '<span style="font-size:11px;background:#f1f5f9;color:#94a3b8;padding:2px 8px;border-radius:999px">—</span>';
-
-    const topStr = topDone
-      ? `${formatBrgDate(rec.top)}${topHist.length>1?' <span style="font-size:10px;color:#9ca3af">('+topHist.length+' ครั้ง)</span>':''}`
-      : '—';
-    const botStr = botDone
-      ? `${formatBrgDate(rec.bot)}${botHist.length>1?' <span style="font-size:10px;color:#9ca3af">('+botHist.length+' ครั้ง)</span>':''}`
-      : '—';
-
-    html += `<tr style="background:${rowBg};border-bottom:1px solid #e2e8f0;cursor:pointer" onclick="openBearingModal('${pier}')" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowBg}'">
-      <td style="padding:10px 12px;font-weight:600;color:#334155">${pier}</td>
-      <td style="padding:10px 12px;text-align:center">
-        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${topDone?'#22c55e':'#cbd5e1'};margin-right:5px;vertical-align:middle"></span>
-        <span style="color:${topDone?'#15803d':'#94a3b8'};font-weight:${topDone?'600':'400'}">${topStr}</span>
-      </td>
-      <td style="padding:10px 12px;text-align:center">
-        <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${botDone?'#f59e0b':'#cbd5e1'};margin-right:5px;vertical-align:middle"></span>
-        <span style="color:${botDone?'#92400e':'#94a3b8'};font-weight:${botDone?'600':'400'}">${botStr}</span>
-      </td>
-      <td style="padding:10px 12px;text-align:center">${statusBadge}</td>
-    </tr>`;
-  });
-
-  if (!piers.length) {
-    html += `<tr><td colspan="4" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px">ไม่พบข้อมูล</td></tr>`;
-  }
-  html += '</tbody></table></div>';
-  container.innerHTML = html;
-}
-
-function renderBearingCalendar(container, data, calYear, calMonth) {
-  // Collect all events {pier, side} keyed by date string
-  const events = {};
-  for (const [pier, rec] of Object.entries(data)) {
-    const addEv = (hist, raw, side) => {
-      const arr = Array.isArray(hist) ? hist : (raw ? [{date:raw}] : []);
-      for (const h of arr) {
-        if (!h || !h.date) continue;
-        if (!events[h.date]) events[h.date] = [];
-        events[h.date].push({ pier, side });
-      }
-    };
-    addEv(rec.topHist, rec.top, 'top');
-    addEv(rec.botHist, rec.bot, 'bot');
-  }
-
-  const allDates = Object.keys(events).sort();
-  const now = new Date();
-  let year = calYear !== undefined ? calYear : now.getFullYear();
-  let month = calMonth !== undefined ? calMonth : now.getMonth();
-  if (calYear === undefined && allDates.length) {
-    const last = allDates[allDates.length-1].split('-');
-    year = parseInt(last[0]); month = parseInt(last[1])-1;
-  }
-
-  const monthNames = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const todayStr = now.toISOString().slice(0,10);
-
-  let html = `<div style="max-width:720px">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <button onclick="shiftBrgCal(-1,${year},${month})" style="padding:5px 14px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;font-size:14px">◀</button>
-      <span style="font-weight:700;font-size:16px;color:#334155;flex:1;text-align:center">${monthNames[month]} ${year+543}</span>
-      <button onclick="shiftBrgCal(1,${year},${month})" style="padding:5px 14px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;font-size:14px">▶</button>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px">
-      ${['อา','จ','อ','พ','พฤ','ศ','ส'].map(d=>`<div style="text-align:center;font-size:11px;font-weight:700;color:#94a3b8;padding:4px 2px">${d}</div>`).join('')}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
-
-  for (let i=0; i<firstDay; i++) html += `<div style="min-height:62px"></div>`;
-
-  for (let d=1; d<=daysInMonth; d++) {
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const evs = events[dateStr] || [];
-    const topEvs = evs.filter(e=>e.side==='top');
-    const botEvs = evs.filter(e=>e.side==='bot');
-    const isToday = dateStr === todayStr;
-    const bg = evs.length ? (topEvs.length&&botEvs.length ? '#d1fae5' : topEvs.length ? '#dcfce7' : '#fef9c3') : (isToday?'#eff6ff':'#fff');
-    const border = isToday ? '2px solid #3b82f6' : '1px solid #e2e8f0';
-
-    html += `<div style="background:${bg};border:${border};border-radius:8px;padding:4px 5px;min-height:62px;cursor:${evs.length?'pointer':'default'}" ${evs.length?`onclick="showBrgDayDetail('${dateStr}')"`:''}>
-      <div style="font-size:12px;font-weight:${isToday?'700':'500'};color:${isToday?'#3b82f6':'#334155'};margin-bottom:2px">${d}</div>
-      ${topEvs.map(e=>`<div style="font-size:9px;background:#22c55e;color:#fff;border-radius:4px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Top-${e.pier}</div>`).join('')}
-      ${botEvs.map(e=>`<div style="font-size:9px;background:#f59e0b;color:#fff;border-radius:4px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bot-${e.pier}</div>`).join('')}
-    </div>`;
-  }
-  html += `</div></div>`;
-
-  // History list sorted newest first
-  if (allDates.length) {
-    const histItems = allDates.slice().reverse().flatMap(date =>
-      (events[date]||[]).map(e => ({date, pier:e.pier, side:e.side}))
-    );
-    html += `<div style="margin-top:20px"><h3 style="font-weight:700;color:#334155;margin-bottom:8px;font-size:14px">📋 ประวัติการติดตั้งทั้งหมด (${histItems.length} รายการ)</h3>
-    <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">`;
-    histItems.slice(0,60).forEach((item,i) => {
-      const bg = i%2===0?'#fff':'#f8fafc';
-      const dot = item.side==='top' ? '#22c55e' : '#f59e0b';
-      const label = item.side==='top' ? 'Top' : 'Bottom';
-      const badgeBg = item.side==='top' ? '#dcfce7' : '#fef9c3';
-      const badgeColor = item.side==='top' ? '#15803d' : '#92400e';
-      html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:${bg};border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="openBearingModal('${item.pier}')">
-        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0"></span>
-        <span style="font-weight:600;color:#334155;font-size:12px;min-width:70px">${item.pier}</span>
-        <span style="font-size:11px;background:${badgeBg};color:${badgeColor};border-radius:999px;padding:1px 8px">${label}</span>
-        <span style="font-size:12px;color:#64748b;margin-left:auto">${formatBrgDate(item.date)}</span>
-      </div>`;
-    });
-    if (histItems.length > 60) {
-      html += `<div style="text-align:center;padding:8px;color:#94a3b8;font-size:12px">... และอีก ${histItems.length-60} รายการ</div>`;
-    }
-    html += `</div></div>`;
-  } else {
-    html += `<div style="margin-top:20px;text-align:center;color:#94a3b8;font-size:13px;padding:20px">ยังไม่มีข้อมูลการติดตั้ง</div>`;
-  }
-
-  container.innerHTML = html;
-}
-
-function shiftBrgCal(dir, year, month) {
-  let m = month + dir;
-  let y = year;
-  if (m < 0) { m = 11; y--; }
-  if (m > 11) { m = 0; y++; }
-  const data = loadBearingData();
-  const container = document.getElementById('brg-main-content');
-  if (!container) return;
-  renderBearingCalendar(container, data, y, m);
-}
-
-async function pullFromSheet() {
-  showSyncStatus('⏳ กำลังดึงข้อมูล...', '#d97706');
-  const data = await syncFromSheet();
-  if (data) {
-    showSyncStatus('✅ อัปเดตแล้ว ' + new Date().toLocaleTimeString('th-TH'), '#15803d');
-    renderBearingTab();
-    if (typeof renderPlanView === 'function') renderPlanView();
-  } else {
-    showSyncStatus('⚠️ ยังไม่มีข้อมูลใน Sheet (ใช้ local)', '#d97706');
-  }
-}
-
-function initBrgSyncBar() {
-  // auto pull every time bearing tab opens
-  pullFromSheet();
-}
-
-function showBrgDayDetail(dateStr) {
-  const data = loadBearingData();
-  const items = [];
-  for (const [pier, rec] of Object.entries(data)) {
-    const checkHist = (hist, raw, side) => {
-      const arr = Array.isArray(hist) ? hist : (raw?[{date:raw}]:[]);
-      if (arr.some(h=>h&&h.date===dateStr)) items.push({pier, side});
-    };
-    checkHist(rec.topHist, rec.top, 'top');
-    checkHist(rec.botHist, rec.bot, 'bot');
-  }
-  if (!items.length) return;
-  alert(`วันที่ ${formatBrgDate(dateStr)}\n\nรายการ Pot Bearing:\n` + items.map(it=>`• ${it.pier} — ${it.side==='top'?'Top':'Bottom'}`).join('\n'));
-}
 
 </script>
 
-<!-- ===== POT BEARING MODAL ===== -->
-<div id="brg-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.5)">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
-    <div class="bg-gradient-to-r from-teal-700 to-teal-500 px-5 py-3 flex items-center justify-between">
-      <div>
-        <div class="text-white font-bold text-sm">🛞 Pot Bearing — <span id="brg-modal-pier"></span></div>
-        <div class="text-teal-100 text-xs mt-0.5">บันทึกวันติดตั้ง Pot Bearing</div>
-      </div>
-      <button onclick="document.getElementById('brg-modal').classList.add('hidden')" class="text-white opacity-70 hover:opacity-100 text-xl leading-none">✕</button>
-    </div>
-    <div class="px-5 py-4 space-y-4">
-      <!-- Top Bearing -->
-      <div class="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
-        <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
-          <span class="text-sm font-bold text-green-800">Top Pot Bearing</span>
-        </div>
-        <div class="flex gap-2 items-center">
-          <input type="date" id="brg-top-date" class="flex-1 px-2 py-1.5 border border-green-300 rounded-lg text-sm focus:ring-2 focus:ring-green-400 focus:outline-none">
-          <button onclick="clearBrgDate('top')" class="text-xs text-gray-400 hover:text-red-500 px-2">✕</button>
-        </div>
-        <!-- History -->
-        <div id="brg-top-history" class="text-xs text-gray-500 space-y-1 max-h-24 overflow-y-auto"></div>
-      </div>
-      <!-- Bottom Bearing -->
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
-        <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
-          <span class="text-sm font-bold text-amber-800">Bottom Pot Bearing</span>
-        </div>
-        <div class="flex gap-2 items-center">
-          <input type="date" id="brg-bot-date" class="flex-1 px-2 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none">
-          <button onclick="clearBrgDate('bot')" class="text-xs text-gray-400 hover:text-red-500 px-2">✕</button>
-        </div>
-        <!-- History -->
-        <div id="brg-bot-history" class="text-xs text-gray-500 space-y-1 max-h-24 overflow-y-auto"></div>
-      </div>
-      <!-- Action buttons -->
-      <div class="flex gap-3 pt-1">
-        <button onclick="document.getElementById('brg-modal').classList.add('hidden')" class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition text-sm">ยกเลิก</button>
-        <button onclick="saveBearing()" class="flex-1 py-2.5 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition text-sm">💾 บันทึก</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
