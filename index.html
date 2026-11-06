@@ -974,6 +974,12 @@ th{position:sticky;top:0;z-index:2}
       </select>
     </div>
   </div>
+  <!-- Google Sheets Sync Bar -->
+  <div class="flex flex-wrap items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-sm">
+    <span class="text-green-700 font-semibold">🔗 Sync กับ Google Sheets</span>
+    <button onclick="pullFromSheet()" class="bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-green-700 whitespace-nowrap">⬇️ ดึงข้อมูลล่าสุด</button>
+    <span id="brg-sync-status" class="text-xs text-slate-500 ml-auto"></span>
+  </div>
   <!-- Summary -->
   <div id="brg-summary" class="text-sm text-slate-600 bg-slate-50 rounded-xl px-4 py-2 border"></div>
   <!-- Main content area (table or calendar) -->
@@ -1171,7 +1177,7 @@ let records = [];  // global — ป้องกัน ReferenceError ก่อ�
 
 // ─── Master Plan Data (from Master_Plan_rev_0, 22-03-69) ──────────────────────
 // มูลค่างานรายหมวด (บาท) และ % แผน ณ เดือนปัจจุบัน (M6 มี.ค.69)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHmAHeL6tyUI8w9DT9uYqhqhiHvvnhfSYLUeRrVWgoHxJFYwq1GMX5lhE7sIe7uaJR/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby17Xuj8yCOXx3q3Oo1OkAgVsy6j2cQLaxibIiD5L22t3Lw0Myzf4c_QOmRKEbLXNXh/exec';
 // QC System
 
 // ===================== BOQ RATES (Bill 4.2) =====================
@@ -1497,7 +1503,7 @@ function switchTab(tab){
   if(tab==='dashboard')updateDashboard();
   if(tab==='payment')renderPayTimeline();
   if(tab==='segment')renderSegmentTab();
-  if(tab==='bearing')renderBearingTab();
+  if(tab==='bearing'){ initBrgSyncBar(); renderBearingTab(); }
 }
 
 
@@ -5284,6 +5290,37 @@ async function importSegmentPDF(input) {
 // ===================== POT BEARING =====================
 const BRG_KEY = 'railway_p03_bearing_v1';
 
+// ===================== POT BEARING — GOOGLE SHEETS SYNC =====================
+// ใช้ GAS_URL เดิม (Script เดียวกับระบบบันทึกข้อมูล) action=get_bearing / set_bearing
+
+async function syncFromSheet() {
+  try {
+    const res = await fetch(GAS_URL + '?action=get_bearing&t=' + Date.now(), {cache:'no-store'});
+    const json = await res.json();
+    if (json && json.data) {
+      localStorage.setItem(BRG_KEY, JSON.stringify(json.data));
+      return json.data;
+    }
+  } catch(e) { console.warn('Bearing sync from sheet failed', e); }
+  return null;
+}
+
+async function syncToSheet(data) {
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'set_bearing', data })
+    });
+  } catch(e) { console.warn('Bearing sync to sheet failed', e); }
+}
+
+function showSyncStatus(msg, color) {
+  const el = document.getElementById('brg-sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || '#64748b';
+}
+
 const PIER_ZONES = {
   'E': ['P03-1','P03-2','P03-3','P03-4','P03-5','P03-6','P03-7','P03-8','P03-9','P03-10',
         'P03-11','P03-12','P03-13','P03-14','P03-15','P03-16','P03-17','P03-18','P03-19','P03-20',
@@ -5316,6 +5353,11 @@ function loadBearingData() {
 }
 function saveBearingData(data) {
   localStorage.setItem(BRG_KEY, JSON.stringify(data));
+  if (BRG_SHEET_URL) {
+    showSyncStatus('⏳ กำลัง sync...', '#d97706');
+    syncToSheet(data).then(() => showSyncStatus('✅ Sync แล้ว', '#15803d'))
+      .catch(() => showSyncStatus('⚠️ Sync ไม่สำเร็จ', '#dc2626'));
+  }
 }
 
 let _brgCurrentPier = null;
@@ -5598,6 +5640,23 @@ function shiftBrgCal(dir, year, month) {
   const container = document.getElementById('brg-main-content');
   if (!container) return;
   renderBearingCalendar(container, data, y, m);
+}
+
+async function pullFromSheet() {
+  showSyncStatus('⏳ กำลังดึงข้อมูล...', '#d97706');
+  const data = await syncFromSheet();
+  if (data) {
+    showSyncStatus('✅ อัปเดตแล้ว ' + new Date().toLocaleTimeString('th-TH'), '#15803d');
+    renderBearingTab();
+    if (typeof renderPlanView === 'function') renderPlanView();
+  } else {
+    showSyncStatus('⚠️ ยังไม่มีข้อมูลใน Sheet (ใช้ local)', '#d97706');
+  }
+}
+
+function initBrgSyncBar() {
+  // auto pull every time bearing tab opens
+  pullFromSheet();
 }
 
 function showBrgDayDetail(dateStr) {
