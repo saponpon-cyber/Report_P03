@@ -55,6 +55,7 @@ th{position:sticky;top:0;z-index:2}
       <button id="tab-piles" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('piles')"><i data-lucide="layers" class="w-4 h-4"></i>Master Pile</button>
       <button id="tab-history" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('history')"><i data-lucide="history" class="w-4 h-4"></i>ประวัติ</button>
       <button id="tab-calendar" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('calendar')"><i data-lucide="calendar" class="w-4 h-4"></i>ปฏิทิน</button>
+      <button id="tab-weekly" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('weekly')"><i data-lucide="trending-up" class="w-4 h-4"></i>รายสัปดาห์</button>
       <button id="tab-plan" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('plan')"><i data-lucide="map" class="w-4 h-4"></i>Plan View</button>
       <button id="tab-payment" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('payment')"><i data-lucide="file-text" class="w-4 h-4"></i>Payment</button>
       <button id="tab-segment" class="pb-2 text-xs sm:text-sm text-blue-200 flex items-center gap-1 whitespace-nowrap hover:text-white transition" onclick="switchTab('segment')"><i data-lucide="grid-3x3" class="w-4 h-4"></i>Segment</button>
@@ -533,7 +534,29 @@ th{position:sticky;top:0;z-index:2}
 </div>
 
 <!-- ===================== CALENDAR ===================== -->
+<!-- ===================== WEEKLY PROGRESS TAB ===================== -->
+<div id="view-weekly" class="hidden p-3 sm:p-5 max-w-7xl mx-auto space-y-3 sm:space-y-5">
+  <!-- ความก้าวหน้ารายสัปดาห์ (ตัดยอดทุกวันเสาร์ 18:00) -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-4 sm:p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <div>
+        <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i data-lucide="trending-up" class="w-5 h-5 text-blue-600"></i>ความก้าวหน้ารายสัปดาห์</h2>
+        <p id="wk-range" class="text-xs text-gray-500 mt-0.5">--</p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="shiftWeek(-1)" class="p-2 hover:bg-blue-50 rounded-lg text-blue-600" title="สัปดาห์ก่อน"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+        <span id="wk-status" class="text-xs font-semibold px-2.5 py-1 rounded-full">--</span>
+        <button onclick="shiftWeek(1)" class="p-2 hover:bg-blue-50 rounded-lg text-blue-600" title="สัปดาห์ถัดไป"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+        <button onclick="copyWeeklyReport()" class="ml-1 flex items-center gap-1 px-3 py-2 bg-green-600 active:bg-green-800 hover:bg-green-700 text-white text-xs font-semibold rounded-lg shadow-sm"><i data-lucide="copy" class="w-4 h-4"></i>คัดลอกรายงาน</button>
+      </div>
+    </div>
+    <div id="wk-cards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"></div>
+    <p id="wk-note" class="text-xs text-gray-400 mt-3"></p>
+  </div>
+</div>
+
 <div id="view-calendar" class="hidden p-3 sm:p-5 max-w-7xl mx-auto space-y-3 sm:space-y-5">
+
   <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-5">
     <div class="flex items-center justify-between mb-3 sm:mb-5">
       <h2 id="cal-month-label" class="text-xl font-bold text-gray-800">--</h2>
@@ -1431,13 +1454,14 @@ function showToast(msg,color='green'){
 
 // ===================== TABS =====================
 function switchTab(tab){
-  ['dashboard','record','piles','history','calendar','plan','payment','segment'].forEach(t=>{
+  ['dashboard','record','piles','history','calendar','weekly','plan','payment','segment'].forEach(t=>{
     const view=document.getElementById('view-'+t);
     if(view) view.classList.toggle('hidden',t!==tab);
     const btn=document.getElementById('tab-'+t);
     if(btn){ btn.classList.toggle('tab-active',t===tab); btn.classList.toggle('text-blue-200',t!==tab); }
   });
   if(tab==='calendar')renderCalendar();
+  if(tab==='weekly')renderWeekly();
   if(tab==='plan'){initPvSelects();renderPlanView();}
   if(tab==='piles')renderPileTable();
   if(tab==='history')renderHistory();
@@ -2988,11 +3012,163 @@ function confirmDelete(){
 document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmDelete();});
 
 // ===================== CALENDAR =====================
+// ===================== WEEKLY PROGRESS (ตัดยอดทุกเสาร์ 18:00) =====================
+const WK_CUTOFF_HOUR=18;
+let wkOffset=0; // 0 = สัปดาห์ปัจจุบัน, -1 = สัปดาห์ก่อน ...
+function _ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function _addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function _thShort(d){return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});}
+// สัปดาห์งาน = อาทิตย์–เสาร์ (นับตามวันที่ทำงาน) ตัดยอดเสาร์ 18:00
+function getWeekRange(offset){
+  const now=new Date();
+  const base=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const sat=_addDays(base,6-base.getDay()+offset*7);
+  const sun=_addDays(sat,-6);
+  const cutoff=new Date(sat.getFullYear(),sat.getMonth(),sat.getDate(),WK_CUTOFF_HOUR,0,0);
+  return {start:_ymd(sun),end:_ymd(sat),sunD:sun,satD:sat,cutoff,closed:now>=cutoff};
+}
+// เหตุการณ์ Segment (หล่อ/ติดตั้ง) จากข้อมูลแถบ Segment
+function _segData(){ try{ return SEG_DATA; }catch(e){ return null; } }
+function getSegEvents(){
+  const out=[];
+  const SEG_DATA=_segData(); if(!SEG_DATA) return out;
+  const st=getSegInstalled();
+  Object.keys(SEG_DATA).forEach(span=>{
+    SEG_DATA[span].forEach((seg,i)=>{
+      const rec=st[span+'_'+i];
+      const cast=(rec&&typeof rec==='object'&&rec.castDate)||seg[1]||'';
+      const inst=rec?(typeof rec==='object'?(rec.instDate||''):rec):'';
+      if(cast) out.push({type:'cast',date:String(cast).slice(0,10),span,idx:i,stype:seg[0]});
+      if(inst) out.push({type:'inst',date:String(inst).slice(0,10),span,idx:i,stype:seg[0]});
+    });
+  });
+  return out;
+}
+function _colStep(r){const s=String(r.pile_id||'').toLowerCase();return (s==='kicker'||s==='shaft'||s==='head')?s:'head';}
+function _segTotal(){const S=_segData();return S?Object.values(S).reduce((a,v)=>a+v.length,0):0;}
+function getWeeklyCats(){
+  const segT=_segTotal();
+  const loc=r=>String(r.location&&r.location!=='-'?r.location:'').replace(/\s*STA.*$/i,'').trim();
+  return [
+    {key:'bp',title:'Bored Pile',hex:'#4f46e5',bg:'bg-indigo-50',bd:'border-indigo-200',tx:'text-indigo-700',main:0,rows:[
+      {label:'เจาะเสร็จ',unit:'ต้น',total:731,match:r=>r.category==='Bored Pile'||r.category==='Static Pile Load Test',val:r=>Number(r.qty)||0,id:r=>r.pile_id||loc(r)}]},
+    {key:'ft',title:'Lean + Footing',hex:'#059669',bg:'bg-emerald-50',bd:'border-emerald-200',tx:'text-emerald-700',main:1,rows:[
+      {label:'Lean Concrete',unit:'จุด',total:194,match:r=>r.category==='Lean Concrete',val:r=>Number(r.qty)||0,id:loc},
+      {label:'Footing',unit:'ฐาน',total:194,match:r=>r.category==='Footing',val:r=>Number(r.qty)||0,id:loc}]},
+    {key:'col',title:'Column',hex:'#7c3aed',bg:'bg-purple-50',bd:'border-purple-200',tx:'text-purple-700',main:2,rows:[
+      {label:'Kicker',unit:'ต้น',total:194,match:r=>r.item_id==='col-col'&&_colStep(r)==='kicker',val:()=>1,id:loc},
+      {label:'Shaft',unit:'ต้น',total:194,match:r=>r.item_id==='col-col'&&_colStep(r)==='shaft',val:()=>1,id:loc},
+      {label:'Head (เสร็จ)',unit:'ต้น',total:194,match:r=>r.item_id==='col-col'&&_colStep(r)==='head',val:()=>1,id:loc}]},
+    {key:'seg',title:'Segment',hex:'#dc2626',bg:'bg-red-50',bd:'border-red-200',tx:'text-red-700',main:1,rows:[
+      {label:'หล่อ',unit:'ชิ้น',total:segT,seg:'cast'},
+      {label:'ติดตั้ง',unit:'ชิ้น',total:segT,seg:'inst'}]}
+  ];
+}
+// รวมยอดของแถวในช่วงวันที่ [from, to] (from=null = ตั้งแต่ต้น)
+function _wkSum(row,from,to,segEv){
+  let sum=0; const ids=[];
+  if(row.seg){
+    const per={};
+    segEv.forEach(e=>{ if(e.type!==row.seg) return; if(from&&e.date<from) return; if(e.date>to) return; sum++; per[e.span]=(per[e.span]||0)+1; });
+    Object.keys(per).forEach(s=>ids.push(per[s]>1?`${s}×${per[s]}`:s));
+  } else {
+    records.forEach(r=>{ if(!r.date||!row.match(r)) return; if(from&&r.date<from) return; if(r.date>to) return; sum+=row.val(r); const i=row.id(r); if(i) ids.push(i); });
+  }
+  return {sum,ids:[...new Set(ids)]};
+}
+function computeWeekly(offset){
+  const w=getWeekRange(offset), p=getWeekRange(offset-1);
+  const segEv=getSegEvents();
+  const cats=getWeeklyCats().map(c=>({...c,rows:c.rows.map(row=>{
+    const cur=_wkSum(row,w.start,w.end,segEv);
+    const prev=_wkSum(row,p.start,p.end,segEv);
+    const cum=_wkSum(row,null,w.end,segEv).sum;
+    const trend=[];
+    for(let k=7;k>=0;k--){const t=getWeekRange(offset-k);trend.push({label:_ymd(t.satD).slice(5),v:_wkSum(row,t.start,t.end,segEv).sum});}
+    return {...row,cur:cur.sum,ids:cur.ids,prev:prev.sum,cum,trend};
+  })}));
+  // รายการที่บันทึกหลังเวลาตัดยอด (ย้อนหลัง)
+  const late=w.closed?records.filter(r=>r.date>=w.start&&r.date<=w.end&&r.created_at&&new Date(r.created_at)>w.cutoff).length:0;
+  return {w,p,cats,late};
+}
+function shiftWeek(n){ wkOffset=Math.min(0,wkOffset+n); renderWeekly(); }
+function renderWeekly(){
+  const box=document.getElementById('wk-cards'); if(!box) return;
+  const {w,cats,late}=computeWeekly(wkOffset);
+  document.getElementById('wk-range').textContent=`อา. ${_thShort(w.sunD)} – ส. ${_thShort(w.satD)} · ตัดยอดเสาร์ 18:00 · เทียบกับสัปดาห์ก่อนหน้า`;
+  const stEl=document.getElementById('wk-status');
+  if(w.closed){ stEl.className='text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700'; stEl.textContent='✔ ปิดยอดแล้ว'; }
+  else {
+    const hrs=Math.max(0,Math.ceil((w.cutoff-new Date())/3600000));
+    stEl.className='text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700';
+    stEl.textContent=hrs>24?`⏳ กำลังสะสม (อีก ${Math.ceil(hrs/24)} วัน)`:`⏳ ตัดยอดอีก ${hrs} ชม.`;
+  }
+  box.innerHTML=cats.map(c=>{
+    const rowsHtml=c.rows.map((r,ri)=>{
+      const d=r.cur-r.prev;
+      const dBadge=d>0?`<span class="text-green-600">▲ ${d}</span>`:d<0?`<span class="text-red-500">▼ ${Math.abs(d)}</span>`:`<span class="text-gray-400">= 0</span>`;
+      const pct=r.total?Math.min(100,r.cum/r.total*100):0;
+      const pctWk=r.total?(r.cur/r.total*100):0;
+      const idsTxt=r.ids.join(', ');
+      return `<div class="${ri?'pt-2.5 mt-2.5 border-t border-gray-100':''}">
+        <div class="flex items-end justify-between gap-2">
+          <div class="text-xs font-semibold text-gray-600">${r.label}</div>
+          <div class="text-right leading-none"><span class="text-2xl font-black ${c.tx}">+${r.cur}</span><span class="text-xs text-gray-400 ml-1">${r.unit}</span></div>
+        </div>
+        <div class="flex justify-between text-xs mt-1"><span class="text-gray-400">สัปดาห์ก่อน ${r.prev} ${r.unit}</span><span class="font-semibold">${dBadge}</span></div>
+        <div class="mt-1.5 h-2 bg-gray-100 rounded-full overflow-hidden relative">
+          <div class="h-full rounded-full" style="width:${pct.toFixed(1)}%;background:${c.hex}"></div>
+        </div>
+        <div class="flex justify-between text-[11px] text-gray-500 mt-0.5"><span>สะสม ${r.cum}/${r.total} (${pct.toFixed(1)}%)</span><span>+${pctWk.toFixed(1)}%</span></div>
+        ${idsTxt?`<div class="text-[11px] text-gray-500 mt-1 truncate" title="${idsTxt}">📍 ${idsTxt}</div>`:''}
+      </div>`;
+    }).join('');
+    // กราฟแท่ง 8 สัปดาห์ของแถวหลัก
+    const m=c.rows[c.main], mx=Math.max(1,...m.trend.map(t=>t.v));
+    const bars=m.trend.map((t,i)=>`<div class="flex-1 flex flex-col items-center justify-end h-full" title="สัปดาห์สิ้นสุด ${t.label}: ${t.v} ${m.unit}">
+        <div class="w-full rounded-t" style="height:${Math.max(2,t.v/mx*100)}%;background:${c.hex};opacity:${i===7?1:0.35}"></div></div>`).join('');
+    return `<div class="rounded-xl border ${c.bd} ${c.bg} p-3">
+      <div class="font-bold text-sm ${c.tx} mb-2">${c.title}</div>
+      <div class="bg-white rounded-lg p-2.5">${rowsHtml}</div>
+      <div class="mt-2"><div class="text-[10px] text-gray-500 mb-0.5">${m.label} · 8 สัปดาห์ล่าสุด</div>
+        <div class="flex items-end gap-1 h-10">${bars}</div></div>
+    </div>`;
+  }).join('');
+  const notes=[];
+  if(late) notes.push(`มี ${late} รายการที่บันทึกหลังเวลาตัดยอด (บันทึกย้อนหลัง) รวมอยู่ในตัวเลขแล้ว`);
+  notes.push('ตัวเลขนับตามวันที่ทำงาน (อา.–ส.) · ข้อมูล Segment มาจากแถบ Segment ในเครื่องนี้');
+  document.getElementById('wk-note').textContent=notes.join(' · ');
+  if(window.lucide) lucide.createIcons();
+}
+function weeklyReportText(){
+  const {w,cats}=computeWeekly(wkOffset);
+  let t=`📊 รายงานความก้าวหน้า P03\nสัปดาห์ ${_thShort(w.sunD)} – ${_thShort(w.satD)} (ตัดยอด ส. 18:00)${w.closed?'':' *ยังไม่ปิดยอด*'}\n`;
+  cats.forEach(c=>{
+    t+=`\n▪ ${c.title}\n`;
+    c.rows.forEach(r=>{
+      const d=r.cur-r.prev, pct=r.total?(r.cum/r.total*100).toFixed(1):'0.0';
+      t+=`  - ${r.label}: +${r.cur} ${r.unit} (สัปดาห์ก่อน ${r.prev}, ${d>0?'▲':d<0?'▼':'='}${Math.abs(d)}) สะสม ${r.cum}/${r.total} (${pct}%)\n`;
+    });
+  });
+  return t;
+}
+function copyWeeklyReport(){
+  const txt=weeklyReportText();
+  const done=()=>showToast('คัดลอกรายงานแล้ว — วางใน LINE ได้เลย','green');
+  if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(txt).then(done).catch(()=>_fallbackCopy(txt,done)); }
+  else _fallbackCopy(txt,done);
+}
+function _fallbackCopy(txt,cb){
+  const ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');cb();}catch(e){} ta.remove();
+}
+
 // ── ตัวกรองหมวดในปฏิทิน ──────────────────────────────
 const CAL_FILTER_GROUPS=[
   {key:'bp',  label:'Bored Pile',     on:'bg-indigo-600 text-white border-indigo-600',  match:r=>r.category==='Bored Pile'},
   {key:'ft',  label:'Lean + Footing', on:'bg-emerald-600 text-white border-emerald-600', match:r=>r.category==='Footing'||r.category==='Lean Concrete'},
   {key:'col', label:'Column',         on:'bg-purple-600 text-white border-purple-600',  match:r=>r.category==='Column / Crossbeam'&&r.item_id==='col-col'},
+  {key:'seg', label:'Segment',        on:'bg-red-600 text-white border-red-600',        match:r=>false},
   {key:'brg', label:'Pot Bearing',    on:'bg-teal-600 text-white border-teal-600',      match:r=>r.category==='Pot Bearing'}
 ];
 let calFilter=new Set(); // ว่าง = แสดงทั้งหมด
@@ -3018,6 +3194,20 @@ function renderCalFilter(){
 
 function renderCalendar(){
   renderCalFilter();
+  // Segment events รวมต่อวัน/Span/ประเภท
+  const segByDay={};
+  if(!calFilter.size||calFilter.has('seg')){
+    getSegEvents().forEach(e=>{
+      const k=e.date+'|'+e.type+'|'+e.span;
+      if(!segByDay[e.date]) segByDay[e.date]={};
+      segByDay[e.date][k]=(segByDay[e.date][k]||0)+1;
+    });
+  }
+  const segItems=(ds)=>Object.entries(segByDay[ds]||{}).map(([k,n])=>{
+    const [,type,span]=k.split('|');
+    return {label:`${type==='inst'?'Inst':'Cast'}-Seg ${span}${n>1?' ×'+n:''}`,
+      color:type==='inst'?'bg-red-100 text-red-700 border border-red-400':'bg-white text-slate-700 border border-slate-400'};
+  });
   const yr=calDate.getFullYear(),mo=calDate.getMonth();
   const thMonths=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   document.getElementById('cal-month-label').textContent=`${thMonths[mo]} ${yr+543}`;
@@ -3047,12 +3237,13 @@ function renderCalendar(){
   for(let d=1;d<=daysInMo;d++){
     const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dayRecs=records.filter(r=>r.date===ds&&calRecPass(r));
+    const items=dayRecs.map(r=>({label:evtLabel(r),color:evtColor(r)})).concat(segItems(ds));
     const isToday=ds===today();
-    html+=`<div class="min-h-24 rounded-xl border ${isToday?'border-blue-500 border-2':'border-gray-200'} p-1.5 cursor-pointer hover:shadow-md transition ${dayRecs.length?'bg-blue-50':'bg-white'}" onclick="showDayModal('${ds}')">
+    html+=`<div class="min-h-24 rounded-xl border ${isToday?'border-blue-500 border-2':'border-gray-200'} p-1.5 cursor-pointer hover:shadow-md transition ${items.length?'bg-blue-50':'bg-white'}" onclick="showDayModal('${ds}')">
       <div class="text-sm font-bold ${isToday?'text-blue-600':'text-gray-700'} mb-1">${d}</div>
       <div class="space-y-0.5 overflow-hidden">
-        ${dayRecs.slice(0,3).map(r=>`<div class="text-xs px-1 py-0.5 rounded ${evtColor(r)} truncate font-medium" title="${evtLabel(r)}">${evtLabel(r)}</div>`).join('')}
-        ${dayRecs.length>3?`<div class="text-xs text-blue-500 font-semibold">+${dayRecs.length-3} อื่นๆ</div>`:''}
+        ${items.slice(0,3).map(it=>`<div class="text-xs px-1 py-0.5 rounded ${it.color} truncate font-medium" title="${it.label}">${it.label}</div>`).join('')}
+        ${items.length>3?`<div class="text-xs text-blue-500 font-semibold">+${items.length-3} อื่นๆ</div>`:''}
       </div>
     </div>`;
   }
@@ -3269,8 +3460,19 @@ function showDayModal(ds){
   const [y,m,d]=ds.split('-');
   const dateObj=new Date(y,parseInt(m)-1,d);
   document.getElementById('day-modal-title').textContent=dateObj.toLocaleDateString('th-TH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  // Segment หล่อ/ติดตั้ง วันนี้
+  const segDay=getSegEvents().filter(e=>e.date===ds);
+  let segHtml='';
+  if(segDay.length){
+    const grp={};
+    segDay.forEach(e=>{const k=e.type+'|'+e.span;(grp[k]=grp[k]||[]).push(e.stype+(e.idx+1));});
+    segHtml=`<div class="mt-4"><h4 class="text-sm font-bold text-gray-700 mb-2">Segment</h4><div class="space-y-1">`+
+      Object.entries(grp).map(([k,arr])=>{const [type,span]=k.split('|');
+        return `<div class="flex flex-wrap items-center gap-2 text-xs"><span class="px-2 py-0.5 rounded-full font-semibold ${type==='inst'?'bg-red-100 text-red-700':'bg-slate-100 text-slate-700'}">${type==='inst'?'ติดตั้ง':'หล่อ'}</span><span class="font-mono font-semibold">${span}</span><span class="text-gray-500">${arr.length} ชิ้น (${arr.join(', ')})</span></div>`;}).join('')+
+      `</div></div>`;
+  }
   if(!dayRecs.length){
-    document.getElementById('day-modal-body').innerHTML='<p class="text-gray-400 text-center py-8">ไม่มีข้อมูลการบันทึกในวันนี้</p>';
+    document.getElementById('day-modal-body').innerHTML=segHtml||'<p class="text-gray-400 text-center py-8">ไม่มีข้อมูลการบันทึกในวันนี้</p>';
   }else{
     const tq=dayRecs.reduce((s,r)=>s+r.qty,0);
     const tc=dayRecs.reduce((s,r)=>s+(r.concrete_volume||0),0);
@@ -3304,7 +3506,7 @@ function showDayModal(ds){
         <td class="px-3 py-2 text-gray-500 text-xs">${r.user}</td>
       </tr>`;
     });
-    html+='</tbody></table></div>';
+    html+='</tbody></table></div>'+segHtml;
     document.getElementById('day-modal-body').innerHTML=html;
   }
   document.getElementById('day-modal').classList.remove('hidden');
