@@ -931,6 +931,7 @@ th{position:sticky;top:0;z-index:2}
         อัพโหลด PDF
         <input type="file" id="seg-pdf-upload" accept=".pdf" class="hidden" onchange="importSegmentPDF(this)">
       </label>
+      <button onclick="segPull()" id="seg-sync-status" class="text-xs font-semibold px-2.5 py-1 rounded border bg-gray-50 text-gray-600 border-gray-300" title="กดเพื่อดึงข้อมูลล่าสุดจาก Google Sheet">☁️ กำลังเชื่อม Google Sheet...</button>
     </div>
   </div>
   <!-- Legend -->
@@ -1141,7 +1142,7 @@ let records = [];  // global — ป้องกัน ReferenceError ก่อ�
 
 // ─── Master Plan Data (from Master_Plan_rev_0, 22-03-69) ──────────────────────
 // มูลค่างานรายหมวด (บาท) และ % แผน ณ เดือนปัจจุบัน (M6 มี.ค.69)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby17Xuj8yCOXx3q3Oo1OkAgVsy6j2cQLaxibIiD5L22t3Lw0Myzf4c_QOmRKEbLXNXh/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzZmlfTbTSLr_H4HJZJUN8JipzwJFklJX7316UIJMlQAYlUbJH5kqPSfnYmaEJbLduB/exec';
 // QC System
 
 // ===================== BOQ RATES (Bill 4.2) =====================
@@ -1404,7 +1405,7 @@ async function gasPull() {
 
 function startAutoSync() {
   if (_autoSyncTimer) clearInterval(_autoSyncTimer);
-  _autoSyncTimer = setInterval(gasPull, 30000); // pull every 30s
+  _autoSyncTimer = setInterval(()=>{ gasPull(); segPull(); }, 30000); // pull every 30s
 }
 
 // ===================== HELPERS =====================
@@ -4907,6 +4908,7 @@ updateDashboard();
 lucide.createIcons();
 // Pull latest from Sheet silently, then auto-refresh every 30s
 gasPull().then(() => startAutoSync());
+setTimeout(() => segPull(), 0); // ดึงวันหล่อ/ติดตั้ง Segment จาก Google Sheet
 
 // ─── Footing Panel ────────────────────────────────────────────────────────────
 function renderPvFtPanel(visible, staStart, pxPerM, LEFT_PAD, totalW) {
@@ -5090,6 +5092,100 @@ function getSegInstalled() {
 }
 function saveSegInstalled(obj) {
   localStorage.setItem(SEG_STORED_KEY, JSON.stringify(obj));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SEGMENT SYNC ↔ Google Sheet (sheet "SegmentData")
+//  - ทุกการแก้ไข (modal / อัพโหลด PDF) ถูกเก็บลงคิว pending แล้วส่งขึ้น Sheet
+//  - เปิดเว็บ / ทุก 30 วิ ดึงข้อมูลล่าสุดจาก Sheet → ทุกเครื่องเห็นตรงกัน
+//  - ถ้าออฟไลน์ คิวจะค้างไว้และส่งใหม่อัตโนมัติ
+// ══════════════════════════════════════════════════════════════════
+const SEG_PENDING_KEY  = 'railway_p03_seg_pending_v1';
+const SEG_MIGRATED_KEY = 'railway_p03_seg_migrated_v1';
+let _segPushing = false;
+function _segPending(){ try{ return JSON.parse(localStorage.getItem(SEG_PENDING_KEY)||'{}'); }catch(e){ return {}; } }
+function _setSegPending(o){ localStorage.setItem(SEG_PENDING_KEY, JSON.stringify(o)); }
+
+function setSegSyncStatus(state, msg){
+  const el=document.getElementById('seg-sync-status'); if(!el) return;
+  const n=Object.keys(_segPending()).length;
+  const S={
+    ok:  ['bg-green-50 text-green-700 border-green-300', '☁️ ซิงค์กับ Google Sheet แล้ว'],
+    sync:['bg-blue-50 text-blue-700 border-blue-300',   '⏳ กำลังซิงค์...'],
+    err: ['bg-red-50 text-red-700 border-red-300',      `⚠️ ยังไม่ได้บันทึกขึ้น Sheet${n?` (ค้าง ${n} รายการ)`:''} — จะลองใหม่อัตโนมัติ`]
+  }[state]||['bg-gray-50 text-gray-600 border-gray-300','--'];
+  el.className='text-xs font-semibold px-2.5 py-1 rounded border '+S[0];
+  el.textContent=msg||S[1];
+  if(state==='ok') el.title='อัพเดทล่าสุด '+new Date().toLocaleTimeString('th-TH');
+}
+
+function _segRefreshViews(){
+  const vis=id=>{const v=document.getElementById(id);return v&&!v.classList.contains('hidden');};
+  if(vis('view-segment'))  renderSegmentTab();
+  if(vis('view-plan'))     renderPlanView();
+  if(vis('view-weekly'))   renderWeekly();
+  if(vis('view-calendar')) renderCalendar();
+}
+
+// changes = { "P03-150_3": {castDate, instDate} | null }
+function segCommit(changes){
+  const st=getSegInstalled(), pend=_segPending();
+  Object.entries(changes).forEach(([k,v])=>{
+    if(!v||(!v.castDate&&!v.instDate)){ delete st[k]; pend[k]=null; }
+    else { const val={castDate:v.castDate||'',instDate:v.instDate||''}; st[k]=val; pend[k]=val; }
+  });
+  saveSegInstalled(st); _setSegPending(pend);
+  return segPush();
+}
+
+async function segPush(){
+  const pend=_segPending(); const keys=Object.keys(pend);
+  if(!keys.length){ setSegSyncStatus('ok'); return true; }
+  if(_segPushing) return false;
+  _segPushing=true; setSegSyncStatus('sync');
+  const res=await gasPush('set_seg',{changes:pend});
+  _segPushing=false;
+  if(res&&res.ok){
+    // ลบออกจากคิวเฉพาะรายการที่ส่งไปแล้วและไม่ได้ถูกแก้ซ้ำระหว่างส่ง
+    const now=_segPending();
+    keys.forEach(k=>{ if(JSON.stringify(now[k])===JSON.stringify(pend[k])) delete now[k]; });
+    _setSegPending(now);
+    if(Object.keys(now).length) return segPush();
+    setSegSyncStatus('ok'); return true;
+  }
+  setSegSyncStatus('err'); return false;
+}
+
+async function segPull(){
+  if(Object.keys(_segPending()).length && !(await segPush())) return false;
+  try{
+    const res=await fetch(GAS_URL+'?action=get_seg&t='+Date.now());
+    const j=await res.json();
+    if(!j||!j.ok||typeof j.data!=='object') throw new Error('no seg data');
+    const server=j.data;
+    // ย้ายข้อมูลเก่าที่เคยบันทึกไว้เฉพาะในเครื่องนี้ขึ้น Sheet (ทำครั้งเดียว, เฉพาะรายการที่ Sheet ยังไม่มี)
+    if(!localStorage.getItem(SEG_MIGRATED_KEY)){
+      const local=getSegInstalled(), mig={};
+      Object.entries(local).forEach(([k,v])=>{
+        if(server[k]) return;
+        const val=typeof v==='object'?v:{castDate:'',instDate:String(v||'')};
+        if(val.castDate||val.instDate) mig[k]=val;
+      });
+      localStorage.setItem(SEG_MIGRATED_KEY,'1');
+      if(Object.keys(mig).length){ Object.assign(server,mig); const p=_segPending(); Object.assign(p,mig); _setSegPending(p); segPush(); }
+    }
+    // รายการที่ยังค้างส่ง ให้ค่าในเครื่องชนะ
+    Object.entries(_segPending()).forEach(([k,v])=>{ if(v) server[k]=v; else delete server[k]; });
+    const before=localStorage.getItem(SEG_STORED_KEY)||'{}';
+    const after=JSON.stringify(server);
+    saveSegInstalled(server);
+    if(!Object.keys(_segPending()).length) setSegSyncStatus('ok');
+    if(before!==after) _segRefreshViews();
+    return true;
+  }catch(e){
+    setSegSyncStatus('err', '⚠️ เชื่อม Google Sheet ไม่ได้ — ตรวจสอบว่า Deploy Code.gs เวอร์ชันใหม่แล้ว');
+    return false;
+  }
 }
 
 function getZoneForSpan(spanId) {
@@ -5281,23 +5377,15 @@ function openSegModal(spanId, idx, stype, sdate) {
 function saveSegModal(spanId, idx) {
   const castDate = document.getElementById('seg-cast-date')?.value || '';
   const instDate = document.getElementById('seg-inst-date')?.value || '';
-  const stored   = getSegInstalled();
   const key      = spanId + '_' + idx;
-  if (!castDate && !instDate) {
-    delete stored[key];
-  } else {
-    stored[key] = { castDate, instDate };
-  }
-  saveSegInstalled(stored);
+  segCommit({ [key]: (castDate||instDate) ? { castDate, instDate } : null });
   document.getElementById('seg-cast-modal')?.remove();
   renderSegmentTab();
   if (document.getElementById('view-plan') && !document.getElementById('view-plan').classList.contains('hidden')) renderPlanView();
 }
 
 function clearSegModal(spanId, idx) {
-  const stored = getSegInstalled();
-  delete stored[spanId + '_' + idx];
-  saveSegInstalled(stored);
+  segCommit({ [spanId + '_' + idx]: null });
   document.getElementById('seg-cast-modal')?.remove();
   renderSegmentTab();
   if (document.getElementById('view-plan') && !document.getElementById('view-plan').classList.contains('hidden')) renderPlanView();
@@ -5402,24 +5490,34 @@ async function importSegmentPDF(input) {
       if (Object.keys(segDates).length) updatedMap[spanId] = segDates;
     }
 
-    // Apply to runtime SEG_DATA
+    // บันทึกวันหล่อลง store (เก็บถาวร + ส่งขึ้น Google Sheet) — คงวันติดตั้งเดิมไว้
     let count = 0;
+    const stored = getSegInstalled();
+    const changes = {};
     for (const [spanId, datemap] of Object.entries(updatedMap)) {
       if (!SEG_DATA[spanId]) continue;
       for (const [idxStr, isoDate] of Object.entries(datemap)) {
         const idx = parseInt(idxStr);
         if (idx < SEG_DATA[spanId].length && isoDate) {
-          SEG_DATA[spanId][idx][1] = isoDate;
+          const key = spanId + '_' + idx;
+          const old = stored[key];
+          const oldInst = old ? (typeof old === 'object' ? (old.instDate||'') : String(old)) : '';
+          const oldCast = old && typeof old === 'object' ? (old.castDate||'') : '';
           count++;
+          if (oldCast === isoDate) continue;           // ไม่เปลี่ยน ไม่ต้องส่ง
+          changes[key] = { castDate: isoDate, instDate: oldInst };
         }
       }
     }
+    const syncOk = Object.keys(changes).length ? await segCommit(changes) : true;
 
     toast.remove();
     const spans = Object.keys(updatedMap).filter(s => SEG_DATA[s]).length;
     const done = document.createElement('div');
     done.className = 'fixed bottom-4 right-4 z-50 bg-green-700 text-white text-sm px-4 py-3 rounded-xl shadow-xl';
-    done.innerHTML = `✅ อัพเดทแล้ว ${spans} Span · ${count} วันหล่อ`;
+    done.className = `fixed bottom-4 right-4 z-50 ${syncOk?'bg-green-700':'bg-amber-600'} text-white text-sm px-4 py-3 rounded-xl shadow-xl`;
+    done.innerHTML = `✅ อัพเดทแล้ว ${spans} Span · ${count} วันหล่อ (เปลี่ยนแปลง ${Object.keys(changes).length})` +
+      (syncOk ? '<br>☁️ บันทึกขึ้น Google Sheet แล้ว' : '<br>⚠️ ยังส่งขึ้น Sheet ไม่ได้ — เก็บไว้ในเครื่องและจะส่งใหม่อัตโนมัติ');
     document.body.appendChild(done);
     setTimeout(() => done.remove(), 4000);
 
